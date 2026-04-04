@@ -88,6 +88,9 @@ app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
+const authRouter = require('./routes/auth');
+const { getAppleConfig } = authRouter;
+
 app.get('/dashboard', (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.redirect('/login');
@@ -98,6 +101,7 @@ app.get('/dashboard', (req, res) => {
   res.renderTemplate('dashboard.html', {
     username: req.session.username,
     total_users: User.count(),
+    apple_configured: getAppleConfig().isConfigured ? 'yes' : '',
     apple_connected: currentUser && currentUser.apple_sub ? 'yes' : '',
     apple_connected_at: currentUser && currentUser.apple_connected_at
       ? new Date(currentUser.apple_connected_at).toLocaleString()
@@ -107,7 +111,7 @@ app.get('/dashboard', (req, res) => {
   });
 });
 
-app.use('/', require('./routes/auth'));
+app.use('/', authRouter);
 app.use('/users', require('./routes/users'));
 
 // 404 handler

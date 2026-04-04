@@ -205,3 +205,4 @@ function decodeJwtPayload(token) {
 }
 
 module.exports = router;
+module.exports.getAppleConfig = getAppleConfig;
