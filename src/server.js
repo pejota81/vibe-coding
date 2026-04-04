@@ -4,6 +4,16 @@ const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const path = require('path');
 const fs = require('fs');
+const csrfMiddleware = require('./middleware/csrf');
+
+const crypto = require('crypto');
+
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error('ERROR: SESSION_SECRET environment variable must be set in production');
+  process.exit(1);
+}
+
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
 const app = express();
 
@@ -19,7 +29,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Session
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'vibe-coding-secret-2024',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -31,6 +41,9 @@ app.use(session({
 
 // Flash
 app.use(flash());
+
+// CSRF protection (must come after session and body parsing)
+app.use(csrfMiddleware);
 
 // Template renderer
 function renderTemplate(res, templateName, data = {}) {
@@ -56,7 +69,10 @@ function renderTemplate(res, templateName, data = {}) {
 
 // Attach renderTemplate to res
 app.use((req, res, next) => {
-  res.renderTemplate = (templateName, data) => renderTemplate(res, templateName, data);
+  res.renderTemplate = (templateName, data) => {
+    const merged = Object.assign({ csrf_token: res.locals.csrfToken || '' }, data);
+    return renderTemplate(res, templateName, merged);
+  };
   next();
 });
 

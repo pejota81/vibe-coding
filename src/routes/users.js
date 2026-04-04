@@ -7,6 +7,7 @@ router.use(requireAuth);
 
 router.get('/', (req, res) => {
   const users = User.findAll();
+  const csrfToken = res.locals.csrfToken || '';
   const rows = users.map(u => `
     <tr>
       <td>${u.id}</td>
@@ -16,7 +17,8 @@ router.get('/', (req, res) => {
       <td>${new Date(u.created_at).toLocaleDateString()}</td>
       <td class="actions">
         <a href="/users/${u.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
-        <form method="POST" action="/users/${u.id}/delete" style="display:inline" data-username="${escHtml(u.username)}" onsubmit="return confirm('Delete user ' + this.dataset.username + '?')">
+        <form method="POST" action="/users/${u.id}/delete" class="delete-form" style="display:inline" data-username="${escHtml(u.username)}">
+          <input type="hidden" name="_csrf" value="${escHtml(csrfToken)}">
           <button type="submit" class="btn btn-danger btn-sm">Delete</button>
         </form>
       </td>

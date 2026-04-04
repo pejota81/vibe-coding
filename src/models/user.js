@@ -34,8 +34,7 @@ function update(id, { username, email, password, role }) {
   const newUsername = username ?? user.username;
   const newEmail = email ?? user.email;
   const newRole = role ?? user.role;
-  const newPassword = password ? bcrypt.hashSync(password, SALT_ROUNDS)
-    : db.prepare('SELECT password FROM users WHERE id = ?').get(id).password;
+  const newPassword = password ? bcrypt.hashSync(password, SALT_ROUNDS) : user.password;
 
   db.prepare(
     'UPDATE users SET username = ?, email = ?, password = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'

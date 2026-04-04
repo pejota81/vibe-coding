@@ -1,31 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const User = require('../models/user');
 
-// Simple in-memory rate limiter for login: max 10 attempts per IP per 15 minutes
-const loginAttempts = new Map();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX = 10;
-
-function loginRateLimiter(req, res, next) {
-  const ip = req.ip || req.connection.remoteAddress;
-  const now = Date.now();
-  const entry = loginAttempts.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
-
-  if (now > entry.resetAt) {
-    entry.count = 0;
-    entry.resetAt = now + RATE_LIMIT_WINDOW_MS;
-  }
-
-  entry.count += 1;
-  loginAttempts.set(ip, entry);
-
-  if (entry.count > RATE_LIMIT_MAX) {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts from this IP, please try again after 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
     req.flash('error', 'Too many login attempts. Please try again later.');
-    return res.redirect('/login');
+    res.redirect('/login');
   }
-  next();
-}
+});
 
 router.get('/login', (req, res) => {
   if (req.session && req.session.userId) {
@@ -37,7 +25,7 @@ router.get('/login', (req, res) => {
   });
 });
 
-router.post('/login', loginRateLimiter, (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -58,7 +46,10 @@ router.post('/login', loginRateLimiter, (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Session destroy error:', err);
+    }
     res.redirect('/login');
   });
 });
