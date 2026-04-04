@@ -5,6 +5,7 @@ const methodOverride = require('method-override');
 const path = require('path');
 const fs = require('fs');
 const csrfMiddleware = require('./middleware/csrf');
+const { router: authRouter, getAppleConfig } = require('./routes/auth');
 
 const crypto = require('crypto');
 
@@ -98,6 +99,7 @@ app.get('/dashboard', (req, res) => {
   res.renderTemplate('dashboard.html', {
     username: req.session.username,
     total_users: User.count(),
+    apple_configured: getAppleConfig().isConfigured ? 'yes' : '',
     apple_connected: currentUser && currentUser.apple_sub ? 'yes' : '',
     apple_connected_at: currentUser && currentUser.apple_connected_at
       ? new Date(currentUser.apple_connected_at).toLocaleString()
@@ -107,6 +109,9 @@ app.get('/dashboard', (req, res) => {
   });
 });
 
+app.use('/', authRouter);
+app.use('/users', require('./routes/users'));
+app.use('/settings', require('./routes/settings'));
 app.get('/profile', (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.redirect('/login');
