@@ -20,6 +20,9 @@ function requirePermission(permName) {
       req.flash('error', 'Please log in to access this page');
       return res.redirect('/login');
     }
+    if (req.session.role === 'admin') {
+      return next();
+    }
     const db = require('../config/database');
     const perm = db.prepare(`
       SELECT 1 FROM role_permissions rp

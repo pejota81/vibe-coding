@@ -381,21 +381,42 @@ function buildDashboardProfileCompletion(currentUser, roleName) {
   };
 }
 
+function pathMatches(currentPath, targetRoot) {
+  return currentPath === targetRoot || currentPath.startsWith(`${targetRoot}/`);
+}
+
 // Attach renderTemplate to res
 app.use((req, res, next) => {
   res.renderTemplate = (templateName, data) => {
+    const currentPath = req.path || '';
+    const usersActive = pathMatches(currentPath, '/users');
+    const rolesActive = pathMatches(currentPath, '/roles');
+    const profileFieldsActive = pathMatches(currentPath, '/profile-fields');
+    const socialPlatformsActive = pathMatches(currentPath, '/social-platforms');
+    const connectedAccountsActive = pathMatches(currentPath, '/connected-accounts');
+    const profileActive = pathMatches(currentPath, '/profile');
+
     const base = {
       csrf_token: res.locals.csrfToken || '',
       is_admin: req.session && req.session.role === 'admin' ? true : false,
-      current_user_id: (req.session && req.session.userId) || ''
+      current_user_id: (req.session && req.session.userId) || '',
+      nav_admin_active_class: (usersActive || rolesActive) ? 'navbar-menu-group-active' : '',
+      nav_configuration_active_class: (profileFieldsActive || socialPlatformsActive || connectedAccountsActive) ? 'navbar-menu-group-active' : '',
+      nav_users_active_class: usersActive ? 'navbar-link-active' : '',
+      nav_roles_active_class: rolesActive ? 'navbar-link-active' : '',
+      nav_profile_fields_active_class: profileFieldsActive ? 'navbar-link-active' : '',
+      nav_social_platforms_active_class: socialPlatformsActive ? 'navbar-link-active' : '',
+      nav_connected_accounts_active_class: connectedAccountsActive ? 'navbar-link-active' : '',
+      nav_profile_active_class: profileActive ? 'navbar-user-link-active' : ''
     };
     // Inject permission flags and section visibility for current user
     if (req.session && req.session.role) {
       const _db = require('./config/database');
       const permSet = getPermissionSet(req.session.role);
-      base.can_manage_profile_fields    = permSet.has('manage_profile_fields')    ? true : false;
-      base.can_manage_social_platforms  = permSet.has('manage_social_platforms')  ? true : false;
-      base.can_manage_connected_accounts = permSet.has('manage_connected_accounts') ? true : false;
+      base.can_manage_profile_fields    = (base.is_admin || permSet.has('manage_profile_fields')) ? true : false;
+      base.can_manage_social_platforms  = (base.is_admin || permSet.has('manage_social_platforms')) ? true : false;
+      base.can_manage_connected_accounts = (base.is_admin || permSet.has('manage_connected_accounts')) ? true : false;
+      base.has_configuration_menu = (base.can_manage_profile_fields || base.can_manage_social_platforms || base.can_manage_connected_accounts) ? true : false;
       const roleRow = _db.prepare('SELECT show_personal_info, show_social_media, show_connected_accounts FROM roles WHERE name = ?').get(req.session.role);
       if (roleRow) {
         base.show_personal_info      = roleRow.show_personal_info      ? true : false;
@@ -455,9 +476,9 @@ app.get('/dashboard', (req, res) => {
   const canManageRoles = isAdmin;
   const hasAdminTools = canManageUsers || canManageRoles;
   const permissionSet = getPermissionSet(req.session.role);
-  const canManageProfileFields = permissionSet.has('manage_profile_fields');
-  const canManageSocialPlatforms = permissionSet.has('manage_social_platforms');
-  const canManageConnectedAccounts = permissionSet.has('manage_connected_accounts');
+  const canManageProfileFields = isAdmin || permissionSet.has('manage_profile_fields');
+  const canManageSocialPlatforms = isAdmin || permissionSet.has('manage_social_platforms');
+  const canManageConnectedAccounts = isAdmin || permissionSet.has('manage_connected_accounts');
   const hasFeatureTools = canManageProfileFields || canManageSocialPlatforms || canManageConnectedAccounts;
 
   res.renderTemplate('dashboard.html', {
