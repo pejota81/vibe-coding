@@ -92,6 +92,7 @@ function linkAppleAccount(userId, { appleSub, appleEmail }) {
 module.exports = {
   findAll,
   findById,
+  findByIdWithPassword,
   findByUsername,
   findByEmail,
   findByAppleSub,
