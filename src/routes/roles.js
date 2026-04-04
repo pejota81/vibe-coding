@@ -14,6 +14,13 @@ function escHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function normalizeCheckbox(value) {
+  if (Array.isArray(value)) {
+    return value.some(item => item === '1' || item === 'on');
+  }
+  return value === '1' || value === 'on';
+}
+
 // List all roles
 router.get('/', (req, res) => {
   const roles = Role.findAll();
@@ -73,6 +80,9 @@ router.get('/new', (req, res) => {
 router.post('/', (req, res) => {
   const { name, description, show_personal_info, show_social_media, show_connected_accounts } = req.body;
   const permissionIds = [].concat(req.body.permissions || []).map(Number);
+  const showPersonalInfo = normalizeCheckbox(show_personal_info);
+  const showSocialMedia = normalizeCheckbox(show_social_media);
+  const showConnectedAccounts = normalizeCheckbox(show_connected_accounts);
 
   if (!name || !name.trim()) {
     req.flash('error', 'Role name is required');
@@ -88,9 +98,9 @@ router.post('/', (req, res) => {
     const role = Role.create({
       name: name.trim(),
       description: description || '',
-      show_personal_info: show_personal_info === 'on' ? 1 : 0,
-      show_social_media: show_social_media === 'on' ? 1 : 0,
-      show_connected_accounts: show_connected_accounts === 'on' ? 1 : 0
+      show_personal_info: showPersonalInfo ? 1 : 0,
+      show_social_media: showSocialMedia ? 1 : 0,
+      show_connected_accounts: showConnectedAccounts ? 1 : 0
     });
     Role.setPermissions(role.id, permissionIds);
     req.flash('success', `Role "${role.name}" created successfully`);
@@ -144,6 +154,9 @@ router.post('/:id', (req, res) => {
 
   const { name, description, show_personal_info, show_social_media, show_connected_accounts } = req.body;
   const permissionIds = [].concat(req.body.permissions || []).map(Number);
+  const showPersonalInfo = normalizeCheckbox(show_personal_info);
+  const showSocialMedia = normalizeCheckbox(show_social_media);
+  const showConnectedAccounts = normalizeCheckbox(show_connected_accounts);
 
   if (!name || !name.trim()) {
     req.flash('error', 'Role name is required');
@@ -162,9 +175,9 @@ router.post('/:id', (req, res) => {
     Role.update(role.id, {
       name: updatedName,
       description: description || '',
-      show_personal_info: show_personal_info === 'on' ? 1 : 0,
-      show_social_media: show_social_media === 'on' ? 1 : 0,
-      show_connected_accounts: show_connected_accounts === 'on' ? 1 : 0
+      show_personal_info: showPersonalInfo ? 1 : 0,
+      show_social_media: showSocialMedia ? 1 : 0,
+      show_connected_accounts: showConnectedAccounts ? 1 : 0
     });
     Role.setPermissions(role.id, permissionIds);
     req.flash('success', `Role "${updatedName}" updated successfully`);
