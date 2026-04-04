@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New User — Vibe Coding</title>
+  <title>Edit Role — Vibe Coding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -12,7 +12,6 @@
     <ul class="navbar-nav">
       {{#if is_admin}}
       <li><a href="/users">Users</a></li>
-      <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
       {{/if}}
       <li class="navbar-user">👤 {{username}}</li>
@@ -28,40 +27,37 @@
   <div class="container">
     <div class="card" style="max-width:560px;margin:0 auto">
       <div class="card-header">
-        <h2>Create New User</h2>
-        <a href="/users" class="btn btn-secondary btn-sm">← Back</a>
+        <h2>Edit Role</h2>
+        <a href="/roles" class="btn btn-secondary btn-sm">← Back</a>
       </div>
 
       {{#if error}}
       <div class="alert alert-danger">{{error}}</div>
       {{/if}}
 
-      <form method="POST" action="/users">
+      {{#if role_protected}}
+      <div class="alert alert-danger">This is a built-in role. Its name cannot be changed.</div>
+      {{/if}}
+
+      <form method="POST" action="/roles/{{role_id}}">
         <input type="hidden" name="_csrf" value="{{csrf_token}}">
         <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" class="form-control"
-                 placeholder="e.g. johndoe" required>
+          <label for="name">Role Name</label>
+          <input type="text" id="name" name="name" class="form-control"
+                 value="{{role_name}}" {{#if role_protected}}readonly{{/if}} required>
         </div>
         <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" class="form-control"
-                 placeholder="e.g. john@example.com" required>
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" class="form-control"
+                 value="{{role_description}}">
         </div>
         <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" class="form-control"
-                 placeholder="Minimum 6 characters" required>
-        </div>
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" name="role" class="form-control">
-            {{role_options}}
-          </select>
+          <label>Permissions</label>
+          {{permissions_html}}
         </div>
         <div style="display:flex;gap:.75rem;margin-top:1.5rem">
-          <button type="submit" class="btn btn-primary">Create User</button>
-          <a href="/users" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <a href="/roles" class="btn btn-secondary">Cancel</a>
         </div>
       </form>
     </div>

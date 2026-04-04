@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
+const Role = require('../models/role');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.use(requireAuth);
@@ -35,7 +36,13 @@ router.get('/', requireAdmin, (req, res) => {
 
 // Admin-only: new user form
 router.get('/new', requireAdmin, (req, res) => {
+  const roles = Role.findAll();
+  const roleOptions = roles.map(r =>
+    `<option value="${escHtml(r.name)}">${escHtml(r.name)}</option>`
+  ).join('');
+
   res.renderTemplate('users/new.html', {
+    role_options: roleOptions,
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
@@ -86,12 +93,16 @@ router.get('/:id/edit', (req, res) => {
     return res.redirect(isAdmin ? '/users' : '/dashboard');
   }
 
+  const roles = Role.findAll();
+  const roleOptions = roles.map(r =>
+    `<option value="${escHtml(r.name)}" ${r.name === user.role ? 'selected' : ''}>${escHtml(r.name)}</option>`
+  ).join('');
+
   res.renderTemplate('users/edit.html', {
     user_id: user.id,
     user_username: escHtml(user.username),
     user_email: escHtml(user.email),
-    user_role_admin: user.role === 'admin' ? 'selected' : '',
-    user_role_user: user.role === 'user' ? 'selected' : '',
+    role_options: roleOptions,
     back_url: isAdmin ? '/users' : '/dashboard',
     error: (req.flash('error') || []).join(' '),
     username: req.session.username

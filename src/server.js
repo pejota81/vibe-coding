@@ -112,6 +112,16 @@ app.get('/dashboard', (req, res) => {
 app.use('/', authRouter);
 app.use('/users', require('./routes/users'));
 app.use('/settings', require('./routes/settings'));
+app.get('/profile', (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.redirect('/login');
+  }
+  res.redirect(`/users/${req.session.userId}/edit`);
+});
+
+app.use('/', require('./routes/auth'));
+app.use('/users', require('./routes/users'));
+app.use('/roles', require('./routes/roles'));
 
 // 404 handler
 app.use((req, res) => {

@@ -7,4 +7,13 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  document.querySelectorAll('.delete-role-form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      const rolename = form.dataset.rolename;
+      if (!confirm('Delete role "' + rolename + '"? This action cannot be undone.')) {
+        e.preventDefault();
+      }
+    });
+  });
 });
