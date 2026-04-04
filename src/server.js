@@ -75,6 +75,107 @@ function renderTemplate(res, templateName, data = {}) {
   res.send(html);
 }
 
+function hasContent(value) {
+  return value != null && String(value).trim() !== '';
+}
+
+function getPermissionSet(roleName) {
+  if (!roleName) {
+    return new Set();
+  }
+
+  const db = require('./config/database');
+  const permRows = db.prepare(`
+    SELECT p.name FROM permissions p
+    JOIN role_permissions rp ON rp.permission_id = p.id
+    JOIN roles r ON r.id = rp.role_id
+    WHERE r.name = ?
+  `).all(roleName);
+
+  return new Set(permRows.map((permission) => permission.name));
+}
+
+function buildDashboardProfileCompletion(currentUser, roleName) {
+  const ProfileFieldType = require('./models/profile_field_type');
+  const SocialPlatform = require('./models/social_platform');
+  const ConnectedAccountType = require('./models/connected_account_type');
+  const visibleSections = getRoleSectionVisibility(roleName);
+  const sections = [];
+
+  sections.push({
+    label: 'Account',
+    complete: hasContent(currentUser?.username) && hasContent(currentUser?.email),
+    hint: 'Add both a username and email address.'
+  });
+
+  if (visibleSections.show_personal_info) {
+    const fieldTypes = ProfileFieldType.findAll();
+    const fieldValues = ProfileFieldType.getUserProfileFields(currentUser.id);
+    const fieldMap = new Map(fieldValues.map((field) => [field.field_type_id, field.value]));
+    const anyPersonalValue = fieldTypes.some((field) => hasContent(fieldMap.get(field.id)));
+    const requiredFieldsComplete = fieldTypes.every((field) => {
+      if (!field.is_mandatory) {
+        return true;
+      }
+      return hasContent(fieldMap.get(field.id));
+    });
+
+    sections.push({
+      label: 'Personal information',
+      complete: fieldTypes.length === 0 || (anyPersonalValue && requiredFieldsComplete),
+      hint: 'Add at least one personal detail and fill any required fields.'
+    });
+  }
+
+  if (visibleSections.show_social_media) {
+    const platforms = SocialPlatform.findAll();
+    const links = SocialPlatform.getUserSocialLinks(currentUser.id);
+    const hasSocialLink = links.some((link) => hasContent(link.value));
+
+    sections.push({
+      label: 'Social media',
+      complete: platforms.length === 0 || hasSocialLink,
+      hint: 'Add at least one social profile link.'
+    });
+  }
+
+  if (visibleSections.show_connected_accounts) {
+    const accountTypes = ConnectedAccountType.findAll();
+    const accounts = ConnectedAccountType.getUserConnectedAccounts(currentUser.id);
+    const hasConnectedAccount = accounts.some((account) => hasContent(account.value));
+
+    sections.push({
+      label: 'Connected accounts',
+      complete: accountTypes.length === 0 || hasConnectedAccount,
+      hint: 'Connect at least one external account.'
+    });
+  }
+
+  const completedSections = sections.filter((section) => section.complete).length;
+  const completionPercent = sections.length === 0
+    ? 100
+    : Math.round((completedSections / sections.length) * 100);
+  const missingSections = sections.filter((section) => !section.complete);
+  const missingSectionsHtml = missingSections.length > 0
+    ? missingSections.map((section) => `
+        <li class="completion-list-item">
+          <strong>${escHtml(section.label)}</strong>
+          <span>${escHtml(section.hint)}</span>
+        </li>`).join('')
+    : `
+        <li class="completion-list-item completion-list-item-complete">
+          <strong>All visible sections are complete.</strong>
+          <span>Your profile is ready to go.</span>
+        </li>`;
+
+  return {
+    profile_completion_percent: completionPercent,
+    profile_completion_angle: Math.round((completionPercent / 100) * 360),
+    profile_completion_summary: `${completedSections} of ${sections.length} sections complete`,
+    profile_missing_sections_html: missingSectionsHtml
+  };
+}
+
 // Attach renderTemplate to res
 app.use((req, res, next) => {
   res.renderTemplate = (templateName, data) => {
@@ -86,13 +187,7 @@ app.use((req, res, next) => {
     // Inject permission flags and section visibility for current user
     if (req.session && req.session.role) {
       const _db = require('./config/database');
-      const permRows = _db.prepare(`
-        SELECT p.name FROM permissions p
-        JOIN role_permissions rp ON rp.permission_id = p.id
-        JOIN roles r ON r.id = rp.role_id
-        WHERE r.name = ?
-      `).all(req.session.role);
-      const permSet = new Set(permRows.map(p => p.name));
+      const permSet = getPermissionSet(req.session.role);
       base.can_manage_profile_fields    = permSet.has('manage_profile_fields')    ? true : false;
       base.can_manage_social_platforms  = permSet.has('manage_social_platforms')  ? true : false;
       base.can_manage_connected_accounts = permSet.has('manage_connected_accounts') ? true : false;
@@ -122,11 +217,57 @@ app.get('/dashboard', (req, res) => {
     return res.redirect('/login');
   }
   const User = require('./models/user');
+  const Role = require('./models/role');
+  const ProfileFieldType = require('./models/profile_field_type');
+  const SocialPlatform = require('./models/social_platform');
+  const ConnectedAccountType = require('./models/connected_account_type');
+  const db = require('./config/database');
   const currentUser = User.findById(req.session.userId);
+  const isAdmin = req.session.role === 'admin';
+  const profileCompletion = currentUser
+    ? buildDashboardProfileCompletion(currentUser, req.session.role)
+    : {
+        profile_completion_percent: 0,
+        profile_completion_angle: 0,
+        profile_completion_summary: '0 of 0 sections complete',
+        profile_missing_sections_html: ''
+      };
+  const totalUsers = User.count();
+  const allRoles = Role.findAll();
+  const roleDistributionHtml = db.prepare(`
+    SELECT r.name, COUNT(u.id) AS user_count
+    FROM roles r
+    LEFT JOIN users u ON u.role = r.name
+    GROUP BY r.id, r.name
+    ORDER BY user_count DESC, r.name ASC
+  `).all().map((role) => `
+    <li class="metric-list-item">
+      <span>${escHtml(role.name)}</span>
+      <strong>${role.user_count} users</strong>
+    </li>`).join('');
+
+  const canManageUsers = isAdmin;
+  const canManageRoles = isAdmin;
+  const hasAdminTools = canManageUsers || canManageRoles;
+  const permissionSet = getPermissionSet(req.session.role);
+  const canManageProfileFields = permissionSet.has('manage_profile_fields');
+  const canManageSocialPlatforms = permissionSet.has('manage_social_platforms');
+  const canManageConnectedAccounts = permissionSet.has('manage_connected_accounts');
+  const hasFeatureTools = canManageProfileFields || canManageSocialPlatforms || canManageConnectedAccounts;
 
   res.renderTemplate('dashboard.html', {
     username: req.session.username,
-    total_users: User.count(),
+    total_users: totalUsers,
+    total_roles: allRoles.length,
+    role_distribution_html: roleDistributionHtml,
+    can_manage_users: canManageUsers ? 'yes' : '',
+    can_manage_roles: canManageRoles ? 'yes' : '',
+    has_admin_tools: hasAdminTools ? 'yes' : '',
+    has_feature_tools: hasFeatureTools ? 'yes' : '',
+    profile_field_count: ProfileFieldType.findAll().length,
+    social_platform_count: SocialPlatform.findAll().length,
+    connected_account_count: ConnectedAccountType.findAll().length,
+    ...profileCompletion,
     apple_configured: getAppleConfig().isConfigured ? 'yes' : '',
     apple_connected: currentUser && currentUser.apple_sub ? 'yes' : '',
     apple_connected_at: currentUser && currentUser.apple_connected_at

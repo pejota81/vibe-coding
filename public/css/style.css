@@ -324,10 +324,201 @@ td.actions {
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .welcome-banner h1 { font-size: 1.75rem; margin-bottom: .5rem; }
 .welcome-banner p { color: #aac4e8; }
+
+.dashboard-section {
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-section-header {
+  align-items: flex-start;
+}
+
+.section-kicker {
+  color: #e94560;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  margin-bottom: .4rem;
+  text-transform: uppercase;
+}
+
+.completion-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.completion-gauge {
+  --completion-angle: 0deg;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: conic-gradient(#e94560 0deg, #ff8a5b var(--completion-angle), #e9edf5 var(--completion-angle), #e9edf5 360deg);
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(15,52,96,.06);
+}
+
+.completion-gauge-inner {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(15,52,96,.12);
+}
+
+.completion-gauge-value {
+  color: #1a1a2e;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.completion-gauge-label {
+  color: #667085;
+  font-size: .85rem;
+  margin-top: .35rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.completion-copy h3 {
+  color: #1a1a2e;
+  font-size: 1rem;
+  margin-bottom: .85rem;
+}
+
+.completion-summary {
+  color: #475467;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.completion-list,
+.metric-list {
+  list-style: none;
+  display: grid;
+  gap: .75rem;
+}
+
+.completion-list-item,
+.metric-list-item {
+  background: #f6f8fb;
+  border: 1px solid #e7ebf3;
+  border-radius: 10px;
+  padding: .85rem 1rem;
+}
+
+.completion-list-item strong,
+.metric-list-item strong {
+  display: block;
+  color: #1a1a2e;
+  margin-bottom: .2rem;
+}
+
+.completion-list-item span,
+.metric-list-item span {
+  color: #667085;
+  font-size: .92rem;
+}
+
+.completion-list-item-complete {
+  background: #eefaf2;
+  border-color: #ccebd8;
+}
+
+.dashboard-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-feature-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.feature-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+  border: 1px solid #e7ebf3;
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+.feature-panel h3 {
+  color: #1a1a2e;
+  font-size: 1.15rem;
+}
+
+.feature-panel p {
+  color: #667085;
+  line-height: 1.5;
+}
+
+.feature-panel-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.feature-panel-label {
+  color: #0f3460;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.feature-panel-value {
+  min-width: 2.75rem;
+  padding: .35rem .7rem;
+  border-radius: 999px;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: .92rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.role-distribution {
+  border-top: 1px solid #e7ebf3;
+  padding-top: 1rem;
+}
+
+.role-distribution h4 {
+  color: #1a1a2e;
+  font-size: .95rem;
+  margin-bottom: .75rem;
+}
+
+.metric-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.metric-list-item strong {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
 
 /* ── Hint text ── */
 .hint {
@@ -363,6 +554,18 @@ td.actions {
   .container { margin: 1rem auto; }
   .login-card { margin: 1rem; }
   td.actions { flex-direction: column; }
+  .welcome-banner { align-items: flex-start; }
+}
+
+@media (max-width: 780px) {
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .completion-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Form checkboxes ── */
