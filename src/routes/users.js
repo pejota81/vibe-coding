@@ -133,7 +133,11 @@ router.post('/:id', (req, res) => {
   }
 
   try {
-    User.update(id, { username, email, password: password || null, role });
+    const updatedUser = User.update(id, { username, email, password: password || null, role });
+    if (isSelf && updatedUser) {
+      req.session.username = updatedUser.username;
+      req.session.role = updatedUser.role;
+    }
     req.flash('success', `Profile updated successfully`);
     return res.redirect(isAdmin ? '/users' : '/dashboard');
   } catch (err) {
