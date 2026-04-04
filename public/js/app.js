@@ -126,6 +126,32 @@ document.addEventListener('DOMContentLoaded', function () {
     syncRepeatableEmptyState(manager);
   }
 
+  function initializeRepeatableValidation(form) {
+    form.addEventListener('submit', function (event) {
+      const managers = form.querySelectorAll('[data-repeatable-manager]');
+      for (let i = 0; i < managers.length; i += 1) {
+        const manager = managers[i];
+        const kind = manager.dataset.entryKind || 'entry';
+        const entries = manager.querySelectorAll('[data-repeatable-entry]');
+
+        for (let j = 0; j < entries.length; j += 1) {
+          const entry = entries[j];
+          const valueInput = entry.querySelector('[data-repeatable-value]');
+          if (!valueInput) {
+            continue;
+          }
+
+          if (String(valueInput.value || '').trim() === '') {
+            event.preventDefault();
+            alert('Please fill or remove the empty ' + kind.replace('-', ' ') + ' entry before saving.');
+            valueInput.focus();
+            return;
+          }
+        }
+      }
+    });
+  }
+
   document.querySelectorAll('.delete-form').forEach(function (form) {
     form.addEventListener('submit', function (e) {
       const username = form.dataset.username;
@@ -145,4 +171,5 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.querySelectorAll('[data-repeatable-manager]').forEach(initializeRepeatableManager);
+  document.querySelectorAll('form').forEach(initializeRepeatableValidation);
 });

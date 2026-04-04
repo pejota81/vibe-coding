@@ -263,12 +263,12 @@ router.get('/:id/edit', (req, res) => {
       valueLabel: 'Profile Link',
       typeInputName: 'social_platform_id',
       valueInputName: 'social_link_value',
-      copyText: 'Add only the social profiles this user should expose. Duplicate platform entries are allowed.',
+      copyText: 'Add only the social profiles this user should expose. Duplicate platform entries are allowed and can be reordered.',
       emptyText: 'No social media profiles added yet.',
       addButtonText: 'Add Social Profile',
       disabledText: 'No social platforms are configured yet. Add one in Social Media before attaching it to a user.',
       removeMessage: 'Remove this social profile entry?',
-      enableReorder: false,
+      enableReorder: true,
       itemIdKey: 'platform_id'
     });
   }

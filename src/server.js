@@ -559,12 +559,12 @@ app.get('/profile', (req, res) => {
       valueLabel: 'Profile Link',
       typeInputName: 'social_platform_id',
       valueInputName: 'social_link_value',
-      copyText: 'Add only the social profiles you want to show. You can add the same platform more than once.',
+      copyText: 'Add only the social profiles you want to show. You can add the same platform more than once and drag to reorder.',
       emptyText: 'No social media profiles added yet.',
       addButtonText: 'Add Social Profile',
       disabledText: 'No social platforms are configured yet. Ask an administrator to add one first.',
       removeMessage: 'Remove this social profile entry?',
-      enableReorder: false,
+      enableReorder: true,
       itemIdKey: 'platform_id'
     });
   }
