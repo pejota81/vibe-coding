@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const Settings = require('../models/settings');
 const { requireAuth } = require('../middleware/auth');
 
 const loginLimiter = rateLimit({
@@ -178,7 +179,6 @@ router.get('/auth/apple/callback', requireAuth, async (req, res) => {
 });
 
 function getAppleConfig() {
-  const Settings = require('../models/settings');
   // Env vars take precedence; DB values are used as fallback
   const privateKeyFromEnv = (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
   const privateKey = privateKeyFromEnv || (Settings.get('apple_private_key') || '');

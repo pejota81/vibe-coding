@@ -41,9 +41,8 @@ router.post('/apple', (req, res) => {
   if (newKey) {
     Settings.set('apple_private_key', newKey);
   }
-  if (apple_redirect_uri && apple_redirect_uri.trim()) {
-    Settings.set('apple_redirect_uri', apple_redirect_uri.trim());
-  }
+  // Always save redirect URI (empty string clears the DB value so the default is used)
+  Settings.set('apple_redirect_uri', apple_redirect_uri ? apple_redirect_uri.trim() : '');
 
   req.flash('success', 'Apple Sign In settings saved. Users can now connect their Apple accounts.');
   res.redirect('/settings');
