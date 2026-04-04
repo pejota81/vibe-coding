@@ -57,10 +57,14 @@ function renderTemplate(res, templateName, data = {}) {
     html = html.replace(regex, value != null ? value : '');
   }
 
-  // Handle {{#if key}}...{{/if}} conditionals
-  html = html.replace(/\{\{#if (\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, key, content) => {
-    return data[key] ? content : '';
-  });
+  // Handle {{#if key}}...{{/if}} conditionals (supports nesting by resolving innermost pairs first)
+  let prev;
+  do {
+    prev = html;
+    html = html.replace(/\{\{#if (\w+)\}\}((?:(?!\{\{#if )[\s\S])*?)\{\{\/if\}\}/g, (_, key, content) => {
+      return data[key] ? content : '';
+    });
+  } while (html !== prev);
 
   // Clear any remaining placeholders
   html = html.replace(/\{\{[^}]+\}\}/g, '');
@@ -111,17 +115,15 @@ app.get('/dashboard', (req, res) => {
 
 app.use('/', authRouter);
 app.use('/users', require('./routes/users'));
+app.use('/roles', require('./routes/roles'));
 app.use('/settings', require('./routes/settings'));
+
 app.get('/profile', (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.redirect('/login');
   }
   res.redirect(`/users/${req.session.userId}/edit`);
 });
-
-app.use('/', require('./routes/auth'));
-app.use('/users', require('./routes/users'));
-app.use('/roles', require('./routes/roles'));
 
 // 404 handler
 app.use((req, res) => {
