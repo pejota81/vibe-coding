@@ -4,6 +4,7 @@ const User = require('../models/user');
 const Role = require('../models/role');
 const SocialPlatform = require('../models/social_platform');
 const ConnectedAccountType = require('../models/connected_account_type');
+const ProfileFieldType = require('../models/profile_field_type');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.use(requireAuth);
@@ -100,6 +101,23 @@ router.get('/:id/edit', (req, res) => {
     `<option value="${escHtml(r.name)}" ${r.name === user.role ? 'selected' : ''}>${escHtml(r.name)}</option>`
   ).join('');
 
+  // Dynamic personal info fields
+  const profileFieldTypes = ProfileFieldType.findAll();
+  const profileFieldRows = ProfileFieldType.getUserProfileFields(user.id);
+  const profileFieldMap = {};
+  for (const row of profileFieldRows) profileFieldMap[row.field_type_id] = row.value;
+
+  const personalInfoFields = profileFieldTypes.map(f => {
+    const required = f.is_mandatory ? ' required' : '';
+    const reqLabel = f.is_mandatory ? ' <span style="color:#e94560">*</span>' : '';
+    return `
+    <div class="form-group">
+      <label for="profile_field_${f.id}">${escHtml(f.name)}${reqLabel}</label>
+      <input type="${escHtml(f.input_type)}" id="profile_field_${f.id}" name="profile_field_${f.id}" class="form-control"
+             value="${escHtml(profileFieldMap[f.id] || '')}" placeholder="${escHtml(f.placeholder)}"${required}>
+    </div>`;
+  }).join('');
+
   const platforms = SocialPlatform.findAll();
   const linkRows = SocialPlatform.getUserSocialLinks(user.id);
   const linkMap = {};
@@ -128,10 +146,7 @@ router.get('/:id/edit', (req, res) => {
     user_id: user.id,
     user_username: escHtml(user.username),
     user_email: escHtml(user.email),
-    user_first_name: escHtml(user.first_name || ''),
-    user_last_name: escHtml(user.last_name || ''),
-    user_birthday: escHtml(user.birthday || ''),
-    user_website: escHtml(user.website || ''),
+    personal_info_fields: personalInfoFields,
     social_links_fields: socialFields,
     connected_accounts_fields: connectedAccountFields,
     role_options: roleOptions,
@@ -152,9 +167,7 @@ router.post('/:id', (req, res) => {
     return res.redirect('/dashboard');
   }
 
-  const { username, email, password,
-    first_name, last_name, birthday, website
-  } = req.body;
+  const { username, email, password } = req.body;
   // Only admins can change roles
   const role = isAdmin ? req.body.role : undefined;
   const id = req.params.id;
@@ -178,13 +191,16 @@ router.post('/:id', (req, res) => {
   }
 
   try {
-    const updatedUser = User.update(id, { username, email, password: password || null, role,
-      first_name, last_name, birthday: birthday || null, website
-    });
+    const updatedUser = User.update(id, { username, email, password: password || null, role });
     if (isSelf && updatedUser) {
       req.session.username = updatedUser.username;
       req.session.role = updatedUser.role;
     }
+
+    // Save dynamic personal info fields
+    const allProfileFieldTypes = ProfileFieldType.findAll();
+    const profileFields = allProfileFieldTypes.map(f => ({ field_type_id: f.id, value: req.body[`profile_field_${f.id}`] || '' }));
+    ProfileFieldType.upsertUserProfileFields(numericId, profileFields);
 
     // Save dynamic social links
     const platforms = SocialPlatform.findAll();

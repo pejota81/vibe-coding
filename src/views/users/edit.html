@@ -14,6 +14,7 @@
       <li><a href="/users">Users</a></li>
       <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
+      <li><a href="/profile-fields">🪹 Profile Fields</a></li>
       <li><a href="/social-platforms">📱 Social Media</a></li>
       <li><a href="/connected-accounts">🔗 Connected Accounts</a></li>
       {{/if}}
@@ -70,30 +71,7 @@
 
         <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Personal Information</h4>
 
-        <div style="display:flex;gap:.75rem">
-          <div class="form-group" style="flex:1">
-            <label for="first_name">First Name</label>
-            <input type="text" id="first_name" name="first_name" class="form-control"
-                   value="{{user_first_name}}">
-          </div>
-          <div class="form-group" style="flex:1">
-            <label for="last_name">Last Name</label>
-            <input type="text" id="last_name" name="last_name" class="form-control"
-                   value="{{user_last_name}}">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="birthday">Birthday</label>
-          <input type="date" id="birthday" name="birthday" class="form-control"
-                 value="{{user_birthday}}">
-        </div>
-
-        <div class="form-group">
-          <label for="website">Website</label>
-          <input type="url" id="website" name="website" class="form-control"
-                 value="{{user_website}}" placeholder="https://example.com">
-        </div>
+        {{personal_info_fields}}
 
         <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Social Media</h4>
 
