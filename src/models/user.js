@@ -32,7 +32,7 @@ function create({ username, email, password, role = 'user' }) {
 }
 
 function update(id, { username, email, password, role }) {
-  const user = findById(id);
+  const user = db.prepare('SELECT id, username, email, password, role, created_at, updated_at FROM users WHERE id = ?').get(id);
   if (!user) return null;
 
   const newUsername = username ?? user.username;
