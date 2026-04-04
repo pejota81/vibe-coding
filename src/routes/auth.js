@@ -204,5 +204,5 @@ function decodeJwtPayload(token) {
   return JSON.parse(payloadJson);
 }
 
+router.getAppleConfig = getAppleConfig;
 module.exports = router;
-module.exports.getAppleConfig = getAppleConfig;
