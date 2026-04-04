@@ -32,22 +32,32 @@ function deletePlatform(id) {
 }
 
 function getUserSocialLinks(userId) {
-  return db.prepare('SELECT platform_id, value FROM user_social_links WHERE user_id = ?').all(userId);
+  return db.prepare(
+    `SELECT usl.id, usl.platform_id, usl.value, usl.position, usl.created_at,
+            sp.name AS platform_name, sp.placeholder, sp.sort_order
+     FROM user_social_links usl
+     JOIN social_platforms sp ON sp.id = usl.platform_id
+     WHERE usl.user_id = ?
+     ORDER BY usl.position, sp.sort_order, sp.id, usl.id`
+  ).all(userId);
 }
 
-function upsertUserSocialLinks(userId, links) {
-  const upsert = db.prepare(
-    'INSERT INTO user_social_links (user_id, platform_id, value) VALUES (?, ?, ?) ON CONFLICT(user_id, platform_id) DO UPDATE SET value = excluded.value'
+function replaceUserSocialLinks(userId, links) {
+  const removeAll = db.prepare('DELETE FROM user_social_links WHERE user_id = ?');
+  const insert = db.prepare(
+    'INSERT INTO user_social_links (user_id, platform_id, value, position) VALUES (?, ?, ?, ?)'
   );
-  const remove = db.prepare('DELETE FROM user_social_links WHERE user_id = ? AND platform_id = ?');
 
-  for (const { platform_id, value } of links) {
-    if (value && value.trim()) {
-      upsert.run(userId, platform_id, value.trim());
-    } else {
-      remove.run(userId, platform_id);
+  const tx = db.transaction((entries) => {
+    removeAll.run(userId);
+    for (let index = 0; index < entries.length; index += 1) {
+      const entry = entries[index];
+      if (!entry.value || !String(entry.value).trim()) continue;
+      insert.run(userId, entry.platform_id, String(entry.value).trim(), (index + 1) * 10);
     }
-  }
+  });
+
+  tx(links || []);
 }
 
 module.exports = {
@@ -57,5 +67,6 @@ module.exports = {
   update,
   delete: deletePlatform,
   getUserSocialLinks,
-  upsertUserSocialLinks
+  replaceUserSocialLinks,
+  upsertUserSocialLinks: replaceUserSocialLinks
 };

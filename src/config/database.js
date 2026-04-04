@@ -182,14 +182,52 @@ db.exec(`
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_social_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     platform_id INTEGER NOT NULL,
     value TEXT NOT NULL DEFAULT '',
-    PRIMARY KEY (user_id, platform_id),
+    position INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (platform_id) REFERENCES social_platforms(id) ON DELETE CASCADE
   )
 `);
+
+let socialLinkColumns = db.prepare('PRAGMA table_info(user_social_links)').all().map((column) => column.name);
+if (!socialLinkColumns.includes('id')) {
+  db.exec('DROP TABLE IF EXISTS user_social_links_legacy');
+  db.exec('ALTER TABLE user_social_links RENAME TO user_social_links_legacy');
+  db.exec(`
+    CREATE TABLE user_social_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      platform_id INTEGER NOT NULL,
+      value TEXT NOT NULL DEFAULT '',
+      position INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (platform_id) REFERENCES social_platforms(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`
+    INSERT INTO user_social_links (user_id, platform_id, value, position)
+    SELECT user_id, platform_id, value, 0
+    FROM user_social_links_legacy
+  `);
+  db.exec('DROP TABLE user_social_links_legacy');
+  socialLinkColumns = db.prepare('PRAGMA table_info(user_social_links)').all().map((column) => column.name);
+}
+if (!socialLinkColumns.includes('position')) {
+  db.exec('ALTER TABLE user_social_links ADD COLUMN position INTEGER DEFAULT 0');
+  socialLinkColumns.push('position');
+}
+if (!socialLinkColumns.includes('created_at')) {
+  db.exec('ALTER TABLE user_social_links ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+  socialLinkColumns.push('created_at');
+}
+db.exec('CREATE INDEX IF NOT EXISTS idx_user_social_links_user_id ON user_social_links(user_id)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_user_social_links_platform_id ON user_social_links(platform_id)');
+db.prepare('UPDATE user_social_links SET position = id * 10 WHERE position IS NULL OR position = 0').run();
 
 // Seed the 10 default social platforms and migrate any existing user data
 const defaultPlatforms = [
@@ -214,8 +252,11 @@ for (const p of defaultPlatforms) {
 
 // One-time migration: copy data from old social_* columns into user_social_links
 if (existingColumns.includes('social_facebook')) {
-  const upsertLink = db.prepare(
-    'INSERT OR IGNORE INTO user_social_links (user_id, platform_id, value) VALUES (?, ?, ?)'
+  const insertLink = db.prepare(
+    'INSERT INTO user_social_links (user_id, platform_id, value, position) VALUES (?, ?, ?, ?)'
+  );
+  const existingLink = db.prepare(
+    'SELECT 1 FROM user_social_links WHERE user_id = ? AND platform_id = ? AND value = ?'
   );
   for (const p of defaultPlatforms) {
     if (!existingColumns.includes(p.col)) continue;
@@ -225,7 +266,9 @@ if (existingColumns.includes('social_facebook')) {
       `SELECT id, ${p.col} AS val FROM users WHERE ${p.col} IS NOT NULL AND ${p.col} != ''`
     ).all();
     for (const u of usersWithValue) {
-      if (u.val) upsertLink.run(u.id, platform.id, u.val);
+      if (u.val && !existingLink.get(u.id, platform.id, u.val)) {
+        insertLink.run(u.id, platform.id, u.val, platform.sort_order || 0);
+      }
     }
   }
 }
@@ -242,14 +285,49 @@ db.exec(`
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_connected_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     account_type_id INTEGER NOT NULL,
     value TEXT NOT NULL DEFAULT '',
-    PRIMARY KEY (user_id, account_type_id),
+    position INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (account_type_id) REFERENCES connected_account_types(id) ON DELETE CASCADE
   )
 `);
+
+let connectedAccountColumns = db.prepare('PRAGMA table_info(user_connected_accounts)').all().map((column) => column.name);
+if (!connectedAccountColumns.includes('id')) {
+  db.exec('DROP TABLE IF EXISTS user_connected_accounts_legacy');
+  db.exec('ALTER TABLE user_connected_accounts RENAME TO user_connected_accounts_legacy');
+  db.exec(`
+    CREATE TABLE user_connected_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      account_type_id INTEGER NOT NULL,
+      value TEXT NOT NULL DEFAULT '',
+      position INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (account_type_id) REFERENCES connected_account_types(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`
+    INSERT INTO user_connected_accounts (user_id, account_type_id, value, position)
+    SELECT user_id, account_type_id, value, 0
+    FROM user_connected_accounts_legacy
+  `);
+  db.exec('DROP TABLE user_connected_accounts_legacy');
+  connectedAccountColumns = db.prepare('PRAGMA table_info(user_connected_accounts)').all().map((column) => column.name);
+}
+if (!connectedAccountColumns.includes('position')) {
+  db.exec('ALTER TABLE user_connected_accounts ADD COLUMN position INTEGER DEFAULT 0');
+  connectedAccountColumns.push('position');
+}
+
+db.exec('CREATE INDEX IF NOT EXISTS idx_user_connected_accounts_user_id ON user_connected_accounts(user_id)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_user_connected_accounts_type_id ON user_connected_accounts(account_type_id)');
+db.prepare('UPDATE user_connected_accounts SET position = id * 10 WHERE position IS NULL OR position = 0').run();
 
 // Seed the 3 default connected account types and migrate any existing user data
 const defaultAccountTypes = [
@@ -267,8 +345,11 @@ for (const t of defaultAccountTypes) {
 
 // One-time migration: copy data from old *_account columns into user_connected_accounts
 if (existingColumns.includes('microsoft_account')) {
-  const upsertAccount = db.prepare(
-    'INSERT OR IGNORE INTO user_connected_accounts (user_id, account_type_id, value) VALUES (?, ?, ?)'
+  const insertAccount = db.prepare(
+    'INSERT INTO user_connected_accounts (user_id, account_type_id, value, position) VALUES (?, ?, ?, ?)'
+  );
+  const existingAccount = db.prepare(
+    'SELECT 1 FROM user_connected_accounts WHERE user_id = ? AND account_type_id = ? AND value = ?'
   );
   for (const t of defaultAccountTypes) {
     if (!existingColumns.includes(t.col)) continue;
@@ -278,7 +359,9 @@ if (existingColumns.includes('microsoft_account')) {
       `SELECT id, ${t.col} AS val FROM users WHERE ${t.col} IS NOT NULL AND ${t.col} != ''`
     ).all();
     for (const u of usersWithValue) {
-      if (u.val) upsertAccount.run(u.id, accountType.id, u.val);
+      if (u.val && !existingAccount.get(u.id, accountType.id, u.val)) {
+        insertAccount.run(u.id, accountType.id, u.val, accountType.sort_order || 0);
+      }
     }
   }
 }

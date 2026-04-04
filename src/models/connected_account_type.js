@@ -32,22 +32,32 @@ function deleteType(id) {
 }
 
 function getUserConnectedAccounts(userId) {
-  return db.prepare('SELECT account_type_id, value FROM user_connected_accounts WHERE user_id = ?').all(userId);
+  return db.prepare(
+    `SELECT uca.id, uca.account_type_id, uca.value, uca.created_at,
+            uca.position, cat.name AS account_type_name, cat.placeholder, cat.sort_order
+     FROM user_connected_accounts uca
+     JOIN connected_account_types cat ON cat.id = uca.account_type_id
+     WHERE uca.user_id = ?
+     ORDER BY uca.position, cat.sort_order, cat.id, uca.id`
+  ).all(userId);
 }
 
-function upsertUserConnectedAccounts(userId, accounts) {
-  const upsert = db.prepare(
-    'INSERT INTO user_connected_accounts (user_id, account_type_id, value) VALUES (?, ?, ?) ON CONFLICT(user_id, account_type_id) DO UPDATE SET value = excluded.value'
+function replaceUserConnectedAccounts(userId, accounts) {
+  const removeAll = db.prepare('DELETE FROM user_connected_accounts WHERE user_id = ?');
+  const insert = db.prepare(
+    'INSERT INTO user_connected_accounts (user_id, account_type_id, value, position) VALUES (?, ?, ?, ?)'
   );
-  const remove = db.prepare('DELETE FROM user_connected_accounts WHERE user_id = ? AND account_type_id = ?');
 
-  for (const { account_type_id, value } of accounts) {
-    if (value && value.trim()) {
-      upsert.run(userId, account_type_id, value.trim());
-    } else {
-      remove.run(userId, account_type_id);
+  const tx = db.transaction((entries) => {
+    removeAll.run(userId);
+    for (let index = 0; index < entries.length; index += 1) {
+      const { account_type_id, value } = entries[index];
+      if (!value || !String(value).trim()) continue;
+      insert.run(userId, account_type_id, String(value).trim(), (index + 1) * 10);
     }
-  }
+  });
+
+  tx(accounts || []);
 }
 
 module.exports = {
@@ -57,5 +67,6 @@ module.exports = {
   update,
   delete: deleteType,
   getUserConnectedAccounts,
-  upsertUserConnectedAccounts
+  replaceUserConnectedAccounts,
+  upsertUserConnectedAccounts: replaceUserConnectedAccounts
 };
