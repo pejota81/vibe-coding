@@ -11,6 +11,10 @@ function findById(id) {
   return db.prepare('SELECT id, username, email, apple_sub, apple_email, apple_connected_at, role, created_at, updated_at FROM users WHERE id = ?').get(id);
 }
 
+function findByIdWithPassword(id) {
+  return db.prepare('SELECT id, username, email, password, apple_sub, apple_email, apple_connected_at, role, created_at, updated_at FROM users WHERE id = ?').get(id);
+}
+
 function findByUsername(username) {
   return db.prepare('SELECT * FROM users WHERE username = ?').get(username);
 }
