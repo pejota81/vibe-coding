@@ -71,16 +71,19 @@
 
         <div class="form-group">
           <label for="apple_private_key">Private Key (PEM)</label>
+          {{#if apple_private_key_configured}}
+          <p class="hint" style="margin-bottom:.5rem">&#10003; A private key is already configured. Paste a new key below only if you want to replace it.</p>
+          {{/if}}
           <textarea id="apple_private_key" name="apple_private_key" class="form-control" rows="8"
-                    placeholder="-----BEGIN EC PRIVATE KEY-----&#10;...&#10;-----END EC PRIVATE KEY-----" required>{{apple_private_key}}</textarea>
+                    placeholder="-----BEGIN EC PRIVATE KEY-----&#10;...&#10;-----END EC PRIVATE KEY-----"></textarea>
           <p class="hint">Paste the full contents of the .p8 file you downloaded from the Apple Developer portal.</p>
         </div>
 
         <div class="form-group">
-          <label for="apple_redirect_uri">Redirect URI</label>
+          <label for="apple_redirect_uri">Redirect URI <span style="font-weight:400;color:#888">(optional)</span></label>
           <input type="url" id="apple_redirect_uri" name="apple_redirect_uri" class="form-control"
                  value="{{apple_redirect_uri}}" placeholder="https://yourdomain.com/auth/apple/callback">
-          <p class="hint">Must match the Return URL registered in your Apple Services ID.</p>
+          <p class="hint">Must match the Return URL registered in your Apple Services ID. Defaults to <code>http://localhost:3000/auth/apple/callback</code>.</p>
         </div>
 
         <div style="margin-top:1.5rem">
