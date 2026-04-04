@@ -135,6 +135,23 @@ app.get('/profile', (req, res) => {
     user_username: user.username,
     user_email: user.email,
     user_role: user.role,
+    user_first_name: user.first_name || '',
+    user_last_name: user.last_name || '',
+    user_birthday: user.birthday || '',
+    user_website: user.website || '',
+    user_social_facebook: user.social_facebook || '',
+    user_social_instagram: user.social_instagram || '',
+    user_social_twitter: user.social_twitter || '',
+    user_social_linkedin: user.social_linkedin || '',
+    user_social_youtube: user.social_youtube || '',
+    user_social_tiktok: user.social_tiktok || '',
+    user_social_snapchat: user.social_snapchat || '',
+    user_social_pinterest: user.social_pinterest || '',
+    user_social_reddit: user.social_reddit || '',
+    user_social_discord: user.social_discord || '',
+    user_microsoft_account: user.microsoft_account || '',
+    user_apple_account: user.apple_account || '',
+    user_google_account: user.google_account || '',
     member_since: new Date(user.created_at).toLocaleDateString(),
     username: req.session.username,
     success: (req.flash('success') || []).join(' '),
@@ -147,7 +164,13 @@ app.post('/profile', (req, res) => {
     return res.redirect('/login');
   }
   const User = require('./models/user');
-  const { username, email, password } = req.body;
+  const { username, email, password,
+    first_name, last_name, birthday, website,
+    social_facebook, social_instagram, social_twitter, social_linkedin,
+    social_youtube, social_tiktok, social_snapchat, social_pinterest,
+    social_reddit, social_discord,
+    microsoft_account, apple_account, google_account
+  } = req.body;
   const id = req.session.userId;
 
   if (!username || !email) {
@@ -174,7 +197,13 @@ app.post('/profile', (req, res) => {
   }
 
   try {
-    const updatedUser = User.update(id, { username, email, password: password || null });
+    const updatedUser = User.update(id, { username, email, password: password || null,
+      first_name, last_name, birthday: birthday || null, website,
+      social_facebook, social_instagram, social_twitter, social_linkedin,
+      social_youtube, social_tiktok, social_snapchat, social_pinterest,
+      social_reddit, social_discord,
+      microsoft_account, apple_account, google_account
+    });
     if (updatedUser) {
       req.session.username = updatedUser.username;
     }

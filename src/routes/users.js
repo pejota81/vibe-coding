@@ -102,6 +102,23 @@ router.get('/:id/edit', (req, res) => {
     user_id: user.id,
     user_username: escHtml(user.username),
     user_email: escHtml(user.email),
+    user_first_name: escHtml(user.first_name || ''),
+    user_last_name: escHtml(user.last_name || ''),
+    user_birthday: escHtml(user.birthday || ''),
+    user_website: escHtml(user.website || ''),
+    user_social_facebook: escHtml(user.social_facebook || ''),
+    user_social_instagram: escHtml(user.social_instagram || ''),
+    user_social_twitter: escHtml(user.social_twitter || ''),
+    user_social_linkedin: escHtml(user.social_linkedin || ''),
+    user_social_youtube: escHtml(user.social_youtube || ''),
+    user_social_tiktok: escHtml(user.social_tiktok || ''),
+    user_social_snapchat: escHtml(user.social_snapchat || ''),
+    user_social_pinterest: escHtml(user.social_pinterest || ''),
+    user_social_reddit: escHtml(user.social_reddit || ''),
+    user_social_discord: escHtml(user.social_discord || ''),
+    user_microsoft_account: escHtml(user.microsoft_account || ''),
+    user_apple_account: escHtml(user.apple_account || ''),
+    user_google_account: escHtml(user.google_account || ''),
     role_options: roleOptions,
     back_url: isAdmin ? '/users' : '/dashboard',
     error: (req.flash('error') || []).join(' '),
@@ -120,7 +137,13 @@ router.post('/:id', (req, res) => {
     return res.redirect('/dashboard');
   }
 
-  const { username, email, password } = req.body;
+  const { username, email, password,
+    first_name, last_name, birthday, website,
+    social_facebook, social_instagram, social_twitter, social_linkedin,
+    social_youtube, social_tiktok, social_snapchat, social_pinterest,
+    social_reddit, social_discord,
+    microsoft_account, apple_account, google_account
+  } = req.body;
   // Only admins can change roles
   const role = isAdmin ? req.body.role : undefined;
   const id = req.params.id;
@@ -144,7 +167,13 @@ router.post('/:id', (req, res) => {
   }
 
   try {
-    const updatedUser = User.update(id, { username, email, password: password || null, role });
+    const updatedUser = User.update(id, { username, email, password: password || null, role,
+      first_name, last_name, birthday: birthday || null, website,
+      social_facebook, social_instagram, social_twitter, social_linkedin,
+      social_youtube, social_tiktok, social_snapchat, social_pinterest,
+      social_reddit, social_discord,
+      microsoft_account, apple_account, google_account
+    });
     if (isSelf && updatedUser) {
       req.session.username = updatedUser.username;
       req.session.role = updatedUser.role;

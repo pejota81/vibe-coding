@@ -55,6 +55,8 @@
         <form method="POST" action="/profile">
           <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
+          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Account</h4>
+
           <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" class="form-control"
@@ -72,6 +74,104 @@
             <input type="password" id="password" name="password" class="form-control"
                    placeholder="Leave blank to keep current password" autocomplete="new-password">
             <p class="hint">Leave blank to keep the existing password.</p>
+          </div>
+
+          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Personal Information</h4>
+
+          <div style="display:flex;gap:.75rem">
+            <div class="form-group" style="flex:1">
+              <label for="first_name">First Name</label>
+              <input type="text" id="first_name" name="first_name" class="form-control"
+                     value="{{user_first_name}}" autocomplete="given-name">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label for="last_name">Last Name</label>
+              <input type="text" id="last_name" name="last_name" class="form-control"
+                     value="{{user_last_name}}" autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="birthday">Birthday</label>
+            <input type="date" id="birthday" name="birthday" class="form-control"
+                   value="{{user_birthday}}" autocomplete="bday">
+          </div>
+
+          <div class="form-group">
+            <label for="website">Website</label>
+            <input type="url" id="website" name="website" class="form-control"
+                   value="{{user_website}}" placeholder="https://example.com" autocomplete="url">
+          </div>
+
+          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Social Media</h4>
+
+          <div class="form-group">
+            <label for="social_facebook">Facebook</label>
+            <input type="text" id="social_facebook" name="social_facebook" class="form-control"
+                   value="{{user_social_facebook}}" placeholder="https://facebook.com/yourprofile">
+          </div>
+          <div class="form-group">
+            <label for="social_instagram">Instagram</label>
+            <input type="text" id="social_instagram" name="social_instagram" class="form-control"
+                   value="{{user_social_instagram}}" placeholder="https://instagram.com/yourhandle">
+          </div>
+          <div class="form-group">
+            <label for="social_twitter">X / Twitter</label>
+            <input type="text" id="social_twitter" name="social_twitter" class="form-control"
+                   value="{{user_social_twitter}}" placeholder="https://x.com/yourhandle">
+          </div>
+          <div class="form-group">
+            <label for="social_linkedin">LinkedIn</label>
+            <input type="text" id="social_linkedin" name="social_linkedin" class="form-control"
+                   value="{{user_social_linkedin}}" placeholder="https://linkedin.com/in/yourprofile">
+          </div>
+          <div class="form-group">
+            <label for="social_youtube">YouTube</label>
+            <input type="text" id="social_youtube" name="social_youtube" class="form-control"
+                   value="{{user_social_youtube}}" placeholder="https://youtube.com/@yourchannel">
+          </div>
+          <div class="form-group">
+            <label for="social_tiktok">TikTok</label>
+            <input type="text" id="social_tiktok" name="social_tiktok" class="form-control"
+                   value="{{user_social_tiktok}}" placeholder="https://tiktok.com/@yourhandle">
+          </div>
+          <div class="form-group">
+            <label for="social_snapchat">Snapchat</label>
+            <input type="text" id="social_snapchat" name="social_snapchat" class="form-control"
+                   value="{{user_social_snapchat}}" placeholder="your-snapchat-username">
+          </div>
+          <div class="form-group">
+            <label for="social_pinterest">Pinterest</label>
+            <input type="text" id="social_pinterest" name="social_pinterest" class="form-control"
+                   value="{{user_social_pinterest}}" placeholder="https://pinterest.com/yourprofile">
+          </div>
+          <div class="form-group">
+            <label for="social_reddit">Reddit</label>
+            <input type="text" id="social_reddit" name="social_reddit" class="form-control"
+                   value="{{user_social_reddit}}" placeholder="https://reddit.com/u/yourhandle">
+          </div>
+          <div class="form-group">
+            <label for="social_discord">Discord</label>
+            <input type="text" id="social_discord" name="social_discord" class="form-control"
+                   value="{{user_social_discord}}" placeholder="yourhandle">
+          </div>
+
+          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Connected Accounts</h4>
+
+          <div class="form-group">
+            <label for="microsoft_account">Microsoft Account <span style="font-weight:400;color:#666">(Outlook / Live / Hotmail)</span></label>
+            <input type="email" id="microsoft_account" name="microsoft_account" class="form-control"
+                   value="{{user_microsoft_account}}" placeholder="you@outlook.com">
+          </div>
+          <div class="form-group">
+            <label for="apple_account">Apple Account</label>
+            <input type="email" id="apple_account" name="apple_account" class="form-control"
+                   value="{{user_apple_account}}" placeholder="you@icloud.com">
+          </div>
+          <div class="form-group">
+            <label for="google_account">Google Account</label>
+            <input type="email" id="google_account" name="google_account" class="form-control"
+                   value="{{user_google_account}}" placeholder="you@gmail.com">
           </div>
 
           <div style="display:flex;gap:.75rem;margin-top:1.5rem">
