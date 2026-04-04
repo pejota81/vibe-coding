@@ -24,6 +24,23 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    first_name TEXT DEFAULT '',
+    last_name TEXT DEFAULT '',
+    birthday DATE,
+    website TEXT DEFAULT '',
+    social_facebook TEXT DEFAULT '',
+    social_instagram TEXT DEFAULT '',
+    social_twitter TEXT DEFAULT '',
+    social_linkedin TEXT DEFAULT '',
+    social_youtube TEXT DEFAULT '',
+    social_tiktok TEXT DEFAULT '',
+    social_snapchat TEXT DEFAULT '',
+    social_pinterest TEXT DEFAULT '',
+    social_reddit TEXT DEFAULT '',
+    social_discord TEXT DEFAULT '',
+    microsoft_account TEXT DEFAULT '',
+    apple_account TEXT DEFAULT '',
+    google_account TEXT DEFAULT '',
     apple_sub TEXT UNIQUE,
     apple_email TEXT,
     apple_connected_at DATETIME,
@@ -42,6 +59,57 @@ if (!existingColumns.includes('apple_email')) {
 }
 if (!existingColumns.includes('apple_connected_at')) {
   db.exec('ALTER TABLE users ADD COLUMN apple_connected_at DATETIME');
+}
+if (!existingColumns.includes('first_name')) {
+  db.exec("ALTER TABLE users ADD COLUMN first_name TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('last_name')) {
+  db.exec("ALTER TABLE users ADD COLUMN last_name TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('birthday')) {
+  db.exec('ALTER TABLE users ADD COLUMN birthday DATE');
+}
+if (!existingColumns.includes('website')) {
+  db.exec("ALTER TABLE users ADD COLUMN website TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_facebook')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_facebook TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_instagram')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_instagram TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_twitter')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_twitter TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_linkedin')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_linkedin TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_youtube')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_youtube TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_tiktok')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_tiktok TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_snapchat')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_snapchat TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_pinterest')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_pinterest TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_reddit')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_reddit TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('social_discord')) {
+  db.exec("ALTER TABLE users ADD COLUMN social_discord TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('microsoft_account')) {
+  db.exec("ALTER TABLE users ADD COLUMN microsoft_account TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('apple_account')) {
+  db.exec("ALTER TABLE users ADD COLUMN apple_account TEXT DEFAULT ''");
+}
+if (!existingColumns.includes('google_account')) {
+  db.exec("ALTER TABLE users ADD COLUMN google_account TEXT DEFAULT ''");
 }
 
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_apple_sub ON users(apple_sub) WHERE apple_sub IS NOT NULL');
