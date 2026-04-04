@@ -22,6 +22,14 @@
   </nav>
 
   <div class="container">
+    {{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+    {{/if}}
+
+    {{#if success}}
+    <div class="alert alert-success">{{success}}</div>
+    {{/if}}
+
     <div class="welcome-banner">
       <h1>Welcome back, {{username}}!</h1>
       <p>Manage your users and application settings below.</p>
@@ -41,6 +49,21 @@
       <div class="quick-links">
         <a href="/users" class="btn btn-secondary">👥 Manage Users</a>
         <a href="/users/new" class="btn btn-primary">➕ Add New User</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Apple Account</h2>
+      </div>
+
+      {{#if apple_connected}}
+      <p class="apple-status apple-status-connected">Connected to Apple.</p>
+      <p class="hint">Linked on {{apple_connected_at}}</p>
+      {{/if}}
+
+      <div class="quick-links">
+        <a href="/auth/apple/connect" class="btn btn-apple"> Connect with Apple</a>
       </div>
     </div>
   </div>

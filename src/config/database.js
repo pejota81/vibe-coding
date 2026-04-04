@@ -16,11 +16,27 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    apple_sub TEXT UNIQUE,
+    apple_email TEXT,
+    apple_connected_at DATETIME,
     role TEXT DEFAULT 'user',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+const existingColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
+if (!existingColumns.includes('apple_sub')) {
+  db.exec('ALTER TABLE users ADD COLUMN apple_sub TEXT');
+}
+if (!existingColumns.includes('apple_email')) {
+  db.exec('ALTER TABLE users ADD COLUMN apple_email TEXT');
+}
+if (!existingColumns.includes('apple_connected_at')) {
+  db.exec('ALTER TABLE users ADD COLUMN apple_connected_at DATETIME');
+}
+
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_apple_sub ON users(apple_sub) WHERE apple_sub IS NOT NULL');
 
 const adminExists = db.prepare("SELECT id FROM users WHERE username = 'admin'").get();
 if (!adminExists) {

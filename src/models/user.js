@@ -4,11 +4,11 @@ const db = require('../config/database');
 const SALT_ROUNDS = 10;
 
 function findAll() {
-  return db.prepare('SELECT id, username, email, role, created_at, updated_at FROM users ORDER BY id').all();
+  return db.prepare('SELECT id, username, email, apple_sub, apple_connected_at, role, created_at, updated_at FROM users ORDER BY id').all();
 }
 
 function findById(id) {
-  return db.prepare('SELECT id, username, email, role, created_at, updated_at FROM users WHERE id = ?').get(id);
+  return db.prepare('SELECT id, username, email, apple_sub, apple_email, apple_connected_at, role, created_at, updated_at FROM users WHERE id = ?').get(id);
 }
 
 function findByUsername(username) {
@@ -17,6 +17,10 @@ function findByUsername(username) {
 
 function findByEmail(email) {
   return db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+}
+
+function findByAppleSub(appleSub) {
+  return db.prepare('SELECT * FROM users WHERE apple_sub = ?').get(appleSub);
 }
 
 function create({ username, email, password, role = 'user' }) {
@@ -66,4 +70,24 @@ function count() {
   return db.prepare('SELECT COUNT(*) as cnt FROM users').get().cnt;
 }
 
-module.exports = { findAll, findById, findByUsername, findByEmail, create, update, delete: deleteUser, verifyPassword, count };
+function linkAppleAccount(userId, { appleSub, appleEmail }) {
+  db.prepare(
+    'UPDATE users SET apple_sub = ?, apple_email = COALESCE(?, apple_email), apple_connected_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(appleSub, appleEmail || null, userId);
+
+  return findById(userId);
+}
+
+module.exports = {
+  findAll,
+  findById,
+  findByUsername,
+  findByEmail,
+  findByAppleSub,
+  create,
+  update,
+  delete: deleteUser,
+  verifyPassword,
+  count,
+  linkAppleAccount
+};

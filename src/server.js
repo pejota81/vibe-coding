@@ -34,7 +34,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'strict',
+    sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production'
   }
 }));
@@ -89,9 +89,17 @@ app.get('/dashboard', (req, res) => {
     return res.redirect('/login');
   }
   const User = require('./models/user');
+  const currentUser = User.findById(req.session.userId);
+
   res.renderTemplate('dashboard.html', {
     username: req.session.username,
-    total_users: User.count()
+    total_users: User.count(),
+    apple_connected: currentUser && currentUser.apple_sub ? 'yes' : '',
+    apple_connected_at: currentUser && currentUser.apple_connected_at
+      ? new Date(currentUser.apple_connected_at).toLocaleString()
+      : '',
+    success: (req.flash('success') || []).join(' '),
+    error: (req.flash('error') || []).join(' ')
   });
 });
 
