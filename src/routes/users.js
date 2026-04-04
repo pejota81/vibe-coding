@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.use(requireAuth);
 
-router.get('/', (req, res) => {
+// Admin-only: list all users
+router.get('/', requireAdmin, (req, res) => {
   const users = User.findAll();
   const csrfToken = res.locals.csrfToken || '';
   const rows = users.map(u => `
@@ -32,14 +33,16 @@ router.get('/', (req, res) => {
   });
 });
 
-router.get('/new', (req, res) => {
+// Admin-only: new user form
+router.get('/new', requireAdmin, (req, res) => {
   res.renderTemplate('users/new.html', {
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
 });
 
-router.post('/', (req, res) => {
+// Admin-only: create user
+router.post('/', requireAdmin, (req, res) => {
   const { username, email, password, role } = req.body;
 
   if (!username || !email || !password) {
@@ -67,34 +70,56 @@ router.post('/', (req, res) => {
   }
 });
 
+// Edit user: admin can edit any user; regular user can only edit their own profile
 router.get('/:id/edit', (req, res) => {
+  const isAdmin = req.session.role === 'admin';
+  const isSelf = parseInt(req.params.id, 10) === req.session.userId;
+
+  if (!isAdmin && !isSelf) {
+    req.flash('error', 'You can only edit your own profile');
+    return res.redirect('/dashboard');
+  }
+
   const user = User.findById(req.params.id);
   if (!user) {
     req.flash('error', 'User not found');
-    return res.redirect('/users');
+    return res.redirect(isAdmin ? '/users' : '/dashboard');
   }
+
   res.renderTemplate('users/edit.html', {
     user_id: user.id,
     user_username: escHtml(user.username),
     user_email: escHtml(user.email),
     user_role_admin: user.role === 'admin' ? 'selected' : '',
     user_role_user: user.role === 'user' ? 'selected' : '',
+    back_url: isAdmin ? '/users' : '/dashboard',
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
 });
 
+// Update user: admin can update any user; regular user can only update their own profile
 router.post('/:id', (req, res) => {
-  const { username, email, password, role } = req.body;
+  const isAdmin = req.session.role === 'admin';
+  const numericId = parseInt(req.params.id, 10);
+  const isSelf = numericId === req.session.userId;
+
+  if (!isAdmin && !isSelf) {
+    req.flash('error', 'You can only edit your own profile');
+    return res.redirect('/dashboard');
+  }
+
+  const { username, email, password } = req.body;
+  // Only admins can change roles
+  const role = isAdmin ? req.body.role : undefined;
   const id = req.params.id;
 
   const existing = User.findById(id);
   if (!existing) {
     req.flash('error', 'User not found');
-    return res.redirect('/users');
+    return res.redirect(isAdmin ? '/users' : '/dashboard');
   }
 
-  const numericId = parseInt(id, 10);
   const byUsername = User.findByUsername(username);
   if (byUsername && byUsername.id !== numericId) {
     req.flash('error', 'Username already taken');
@@ -109,15 +134,16 @@ router.post('/:id', (req, res) => {
 
   try {
     User.update(id, { username, email, password: password || null, role });
-    req.flash('success', `User "${username}" updated successfully`);
-    res.redirect('/users');
+    req.flash('success', `Profile updated successfully`);
+    return res.redirect(isAdmin ? '/users' : '/dashboard');
   } catch (err) {
     req.flash('error', 'Error updating user: ' + err.message);
     res.redirect(`/users/${id}/edit`);
   }
 });
 
-router.post('/:id/delete', (req, res) => {
+// Admin-only: delete user
+router.post('/:id/delete', requireAdmin, (req, res) => {
   const result = User.delete(req.params.id);
   if (result.success) {
     req.flash('success', 'User deleted successfully');

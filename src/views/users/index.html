@@ -10,7 +10,9 @@
   <nav class="navbar">
     <a href="/dashboard" class="navbar-brand">Vibe Coding</a>
     <ul class="navbar-nav">
+      {{#if is_admin}}
       <li><a href="/users">Users</a></li>
+      {{/if}}
       <li class="navbar-user">👤 {{username}}</li>
       <li>
         <form method="POST" action="/logout" style="margin:0">
