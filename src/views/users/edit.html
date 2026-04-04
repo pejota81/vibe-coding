@@ -15,6 +15,7 @@
       <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
       <li><a href="/social-platforms">📱 Social Media</a></li>
+      <li><a href="/connected-accounts">🔗 Connected Accounts</a></li>
       {{/if}}
       <li class="navbar-user"><a href="/profile" style="color:#e94560;text-decoration:none">👤 {{username}}</a></li>
       <li>
@@ -100,21 +101,7 @@
 
         <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Connected Accounts</h4>
 
-        <div class="form-group">
-          <label for="microsoft_account">Microsoft Account <span style="font-weight:400;color:#666">(Outlook / Live / Hotmail)</span></label>
-          <input type="email" id="microsoft_account" name="microsoft_account" class="form-control"
-                 value="{{user_microsoft_account}}" placeholder="you@outlook.com">
-        </div>
-        <div class="form-group">
-          <label for="apple_account">Apple Account</label>
-          <input type="email" id="apple_account" name="apple_account" class="form-control"
-                 value="{{user_apple_account}}" placeholder="you@icloud.com">
-        </div>
-        <div class="form-group">
-          <label for="google_account">Google Account</label>
-          <input type="email" id="google_account" name="google_account" class="form-control"
-                 value="{{user_google_account}}" placeholder="you@gmail.com">
-        </div>
+        {{connected_accounts_fields}}
 
         <div style="display:flex;gap:.75rem;margin-top:1.5rem">
           <button type="submit" class="btn btn-primary">Save Changes</button>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Users — Vibe Coding</title>
+  <title>Connected Account Types — Vibe Coding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -38,24 +38,22 @@
 
     <div class="card">
       <div class="card-header">
-        <h2>All Users</h2>
-        <a href="/users/new" class="btn btn-primary btn-sm">➕ Add New User</a>
+        <h2>Connected Account Types</h2>
+        <a href="/connected-accounts/new" class="btn btn-primary btn-sm">➕ Add Account Type</a>
       </div>
 
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Created</th>
+              <th>Order</th>
+              <th>Name</th>
+              <th>Email / Handle Example</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {{users_table}}
+            {{types_table}}
           </tbody>
         </table>
       </div>
