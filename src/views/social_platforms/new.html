@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Role — Vibe Coding</title>
+  <title>New Social Media Platform — Vibe Coding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
     <ul class="navbar-nav">
       {{#if is_admin}}
       <li><a href="/users">Users</a></li>
+      <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
       <li><a href="/social-platforms">📱 Social Media</a></li>
       {{/if}}
@@ -28,33 +29,40 @@
   <div class="container">
     <div class="card" style="max-width:560px;margin:0 auto">
       <div class="card-header">
-        <h2>Create New Role</h2>
-        <a href="/roles" class="btn btn-secondary btn-sm">← Back</a>
+        <h2>Add Social Media Platform</h2>
+        <a href="/social-platforms" class="btn btn-secondary btn-sm">← Back</a>
       </div>
 
       {{#if error}}
       <div class="alert alert-danger">{{error}}</div>
       {{/if}}
 
-      <form method="POST" action="/roles">
+      <form method="POST" action="/social-platforms">
         <input type="hidden" name="_csrf" value="{{csrf_token}}">
+
         <div class="form-group">
-          <label for="name">Role Name</label>
+          <label for="name">Platform Name</label>
           <input type="text" id="name" name="name" class="form-control"
-                 placeholder="e.g. moderator" required>
+                 placeholder="e.g. Mastodon" required>
         </div>
+
         <div class="form-group">
-          <label for="description">Description</label>
-          <input type="text" id="description" name="description" class="form-control"
-                 placeholder="e.g. Can moderate content">
+          <label for="placeholder">URL / Handle Example</label>
+          <input type="text" id="placeholder" name="placeholder" class="form-control"
+                 placeholder="e.g. https://mastodon.social/@yourhandle">
+          <p class="hint">Shown as a placeholder in the user profile form.</p>
         </div>
+
         <div class="form-group">
-          <label>Permissions</label>
-          {{permissions_html}}
+          <label for="sort_order">Sort Order</label>
+          <input type="number" id="sort_order" name="sort_order" class="form-control"
+                 value="{{next_order}}" min="0" step="10">
+          <p class="hint">Lower numbers appear first. Use multiples of 10 to leave room for reordering.</p>
         </div>
+
         <div style="display:flex;gap:.75rem;margin-top:1.5rem">
-          <button type="submit" class="btn btn-primary">Create Role</button>
-          <a href="/roles" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Create Platform</button>
+          <a href="/social-platforms" class="btn btn-secondary">Cancel</a>
         </div>
       </form>
     </div>

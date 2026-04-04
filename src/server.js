@@ -120,17 +120,41 @@ app.use('/', authRouter);
 app.use('/users', require('./routes/users'));
 app.use('/roles', require('./routes/roles'));
 app.use('/settings', require('./routes/settings'));
+app.use('/social-platforms', require('./routes/social_platforms'));
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 app.get('/profile', (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.redirect('/login');
   }
   const User = require('./models/user');
+  const SocialPlatform = require('./models/social_platform');
   const user = User.findById(req.session.userId);
   if (!user) {
     req.flash('error', 'User not found');
     return res.redirect('/dashboard');
   }
+
+  const platforms = SocialPlatform.findAll();
+  const linkRows = SocialPlatform.getUserSocialLinks(req.session.userId);
+  const linkMap = {};
+  for (const row of linkRows) linkMap[row.platform_id] = row.value;
+
+  const socialFields = platforms.map(p => `
+    <div class="form-group">
+      <label for="social_link_${p.id}">${escHtml(p.name)}</label>
+      <input type="text" id="social_link_${p.id}" name="social_link_${p.id}" class="form-control"
+             value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
+    </div>`).join('');
+
   res.renderTemplate('profile.html', {
     user_username: user.username,
     user_email: user.email,
@@ -139,19 +163,10 @@ app.get('/profile', (req, res) => {
     user_last_name: user.last_name || '',
     user_birthday: user.birthday || '',
     user_website: user.website || '',
-    user_social_facebook: user.social_facebook || '',
-    user_social_instagram: user.social_instagram || '',
-    user_social_twitter: user.social_twitter || '',
-    user_social_linkedin: user.social_linkedin || '',
-    user_social_youtube: user.social_youtube || '',
-    user_social_tiktok: user.social_tiktok || '',
-    user_social_snapchat: user.social_snapchat || '',
-    user_social_pinterest: user.social_pinterest || '',
-    user_social_reddit: user.social_reddit || '',
-    user_social_discord: user.social_discord || '',
     user_microsoft_account: user.microsoft_account || '',
     user_apple_account: user.apple_account || '',
     user_google_account: user.google_account || '',
+    social_links_fields: socialFields,
     member_since: new Date(user.created_at).toLocaleDateString(),
     username: req.session.username,
     success: (req.flash('success') || []).join(' '),
@@ -164,11 +179,9 @@ app.post('/profile', (req, res) => {
     return res.redirect('/login');
   }
   const User = require('./models/user');
+  const SocialPlatform = require('./models/social_platform');
   const { username, email, password,
     first_name, last_name, birthday, website,
-    social_facebook, social_instagram, social_twitter, social_linkedin,
-    social_youtube, social_tiktok, social_snapchat, social_pinterest,
-    social_reddit, social_discord,
     microsoft_account, apple_account, google_account
   } = req.body;
   const id = req.session.userId;
@@ -199,14 +212,17 @@ app.post('/profile', (req, res) => {
   try {
     const updatedUser = User.update(id, { username, email, password: password || null,
       first_name, last_name, birthday: birthday || null, website,
-      social_facebook, social_instagram, social_twitter, social_linkedin,
-      social_youtube, social_tiktok, social_snapchat, social_pinterest,
-      social_reddit, social_discord,
       microsoft_account, apple_account, google_account
     });
     if (updatedUser) {
       req.session.username = updatedUser.username;
     }
+
+    // Save dynamic social links
+    const platforms = SocialPlatform.findAll();
+    const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
+    SocialPlatform.upsertUserSocialLinks(id, links);
+
     req.flash('success', 'Profile updated successfully');
     res.redirect('/profile');
   } catch (err) {

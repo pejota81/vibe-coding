@@ -115,6 +115,66 @@ if (!existingColumns.includes('google_account')) {
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_apple_sub ON users(apple_sub) WHERE apple_sub IS NOT NULL');
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS social_platforms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    placeholder TEXT DEFAULT '',
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_social_links (
+    user_id INTEGER NOT NULL,
+    platform_id INTEGER NOT NULL,
+    value TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (user_id, platform_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (platform_id) REFERENCES social_platforms(id) ON DELETE CASCADE
+  )
+`);
+
+// Seed the 10 default social platforms and migrate any existing user data
+const defaultPlatforms = [
+  { name: 'Facebook',    placeholder: 'https://facebook.com/yourprofile',      col: 'social_facebook',  order: 10 },
+  { name: 'Instagram',   placeholder: 'https://instagram.com/yourhandle',      col: 'social_instagram', order: 20 },
+  { name: 'X / Twitter', placeholder: 'https://x.com/yourhandle',              col: 'social_twitter',   order: 30 },
+  { name: 'LinkedIn',    placeholder: 'https://linkedin.com/in/yourprofile',   col: 'social_linkedin',  order: 40 },
+  { name: 'YouTube',     placeholder: 'https://youtube.com/@yourchannel',      col: 'social_youtube',   order: 50 },
+  { name: 'TikTok',      placeholder: 'https://tiktok.com/@yourhandle',        col: 'social_tiktok',    order: 60 },
+  { name: 'Snapchat',    placeholder: 'your-snapchat-username',                col: 'social_snapchat',  order: 70 },
+  { name: 'Pinterest',   placeholder: 'https://pinterest.com/yourprofile',     col: 'social_pinterest', order: 80 },
+  { name: 'Reddit',      placeholder: 'https://reddit.com/u/yourhandle',       col: 'social_reddit',    order: 90 },
+  { name: 'Discord',     placeholder: 'yourhandle',                            col: 'social_discord',   order: 100 },
+];
+
+for (const p of defaultPlatforms) {
+  const exists = db.prepare('SELECT id FROM social_platforms WHERE name = ?').get(p.name);
+  if (!exists) {
+    db.prepare('INSERT INTO social_platforms (name, placeholder, sort_order) VALUES (?, ?, ?)').run(p.name, p.placeholder, p.order);
+  }
+}
+
+// One-time migration: copy data from old social_* columns into user_social_links
+if (existingColumns.includes('social_facebook')) {
+  const upsertLink = db.prepare(
+    'INSERT OR IGNORE INTO user_social_links (user_id, platform_id, value) VALUES (?, ?, ?)'
+  );
+  for (const p of defaultPlatforms) {
+    if (!existingColumns.includes(p.col)) continue;
+    const platform = db.prepare('SELECT id FROM social_platforms WHERE name = ?').get(p.name);
+    if (!platform) continue;
+    const usersWithValue = db.prepare(
+      `SELECT id, ${p.col} AS val FROM users WHERE ${p.col} IS NOT NULL AND ${p.col} != ''`
+    ).all();
+    for (const u of usersWithValue) {
+      if (u.val) upsertLink.run(u.id, platform.id, u.val);
+    }
+  }
+}
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS roles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
