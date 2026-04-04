@@ -6,4 +6,12 @@ function requireAuth(req, res, next) {
   res.redirect('/login');
 }
 
-module.exports = { requireAuth };
+function requireAdmin(req, res, next) {
+  if (req.session && req.session.role === 'admin') {
+    return next();
+  }
+  req.flash('error', 'Access denied. Admin privileges required.');
+  res.redirect('/dashboard');
+}
+
+module.exports = { requireAuth, requireAdmin };
