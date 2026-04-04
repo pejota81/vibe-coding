@@ -9,6 +9,135 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.use(requireAuth);
 
+function normalizeArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value == null) {
+    return [];
+  }
+  return [value];
+}
+
+function buildSubmittedRepeatableEntries(body, idFieldName, valueFieldName, validItems, outputIdKey) {
+  const validTypeIds = new Set(validItems.map((item) => String(item.id)));
+  const typeIds = normalizeArray(body[idFieldName]);
+  const values = normalizeArray(body[valueFieldName]);
+  const entryCount = Math.max(typeIds.length, values.length);
+  const entries = [];
+
+  for (let index = 0; index < entryCount; index += 1) {
+    const typeId = String(typeIds[index] || '').trim();
+    const value = String(values[index] || '').trim();
+
+    if (!typeId || !validTypeIds.has(typeId) || !value) {
+      continue;
+    }
+
+    entries.push({
+      [outputIdKey]: Number(typeId),
+      value
+    });
+  }
+
+  return entries;
+}
+
+function renderRepeatableTypeOptions(items, selectedItemId) {
+  return items.map((item) => {
+    const isSelected = String(item.id) === String(selectedItemId);
+    return `<option value="${item.id}" data-placeholder="${escHtml(item.placeholder || '')}" ${isSelected ? 'selected' : ''}>${escHtml(item.name)}</option>`;
+  }).join('');
+}
+
+function renderRepeatableEntriesManager(config) {
+  const {
+    items,
+    entries,
+    managerKind,
+    typeLabel,
+    valueLabel,
+    typeInputName,
+    valueInputName,
+    copyText,
+    emptyText,
+    addButtonText,
+    disabledText,
+    removeMessage,
+    enableReorder,
+    itemIdKey
+  } = config;
+
+  if (items.length === 0) {
+    return `
+      <div class="repeatable-manager repeatable-manager-disabled">
+        <p class="hint">${escHtml(disabledText)}</p>
+      </div>`;
+  }
+
+  const renderEntry = (entry) => {
+    const selectedItem = items.find((item) => String(item.id) === String(entry[itemIdKey])) || items[0];
+    return `
+      <div class="repeatable-entry" data-repeatable-entry draggable="${enableReorder ? 'true' : 'false'}">
+        <div class="repeatable-entry-grid">
+          <div class="form-group">
+            <label>${escHtml(typeLabel)}</label>
+            <select name="${typeInputName}[]" class="form-control" data-repeatable-type>
+              ${renderRepeatableTypeOptions(items, selectedItem.id)}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>${escHtml(valueLabel)}</label>
+            <input type="text" name="${valueInputName}[]" class="form-control"
+                   value="${escHtml(entry.value || '')}" placeholder="${escHtml(selectedItem.placeholder || '')}" data-repeatable-value>
+          </div>
+        </div>
+        <div class="repeatable-entry-actions">
+          ${enableReorder ? '<span class="reorder-handle" data-repeatable-handle>Drag to reorder</span>' : ''}
+          <button type="button" class="btn btn-danger btn-sm" data-repeatable-remove>Remove</button>
+        </div>
+      </div>`;
+  };
+
+  const firstItem = items[0];
+  const rowsHtml = entries.map(renderEntry).join('');
+
+  return `
+    <div class="repeatable-manager" data-repeatable-manager data-entry-kind="${escHtml(managerKind)}" data-remove-message="${escHtml(removeMessage)}" data-enable-reorder="${enableReorder ? 'true' : 'false'}">
+      <div class="repeatable-toolbar">
+        <div>
+          <p class="repeatable-copy">${escHtml(copyText)}</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" data-repeatable-add>${escHtml(addButtonText)}</button>
+      </div>
+      <div class="repeatable-list" data-repeatable-list>
+        <div class="repeatable-empty" data-repeatable-empty ${rowsHtml ? 'style="display:none"' : ''}>${escHtml(emptyText)}</div>
+        ${rowsHtml}
+      </div>
+      <template data-repeatable-template>
+        <div class="repeatable-entry" data-repeatable-entry draggable="${enableReorder ? 'true' : 'false'}">
+          <div class="repeatable-entry-grid">
+            <div class="form-group">
+              <label>${escHtml(typeLabel)}</label>
+              <select name="${typeInputName}[]" class="form-control" data-repeatable-type>
+                ${renderRepeatableTypeOptions(items, firstItem.id)}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>${escHtml(valueLabel)}</label>
+              <input type="text" name="${valueInputName}[]" class="form-control"
+                     value="" placeholder="${escHtml(firstItem.placeholder || '')}" data-repeatable-value>
+            </div>
+          </div>
+          <div class="repeatable-entry-actions">
+            ${enableReorder ? '<span class="reorder-handle" data-repeatable-handle>Drag to reorder</span>' : ''}
+            <button type="button" class="btn btn-danger btn-sm" data-repeatable-remove>Remove</button>
+          </div>
+        </div>
+      </template>
+    </div>`;
+}
+
 // Admin-only: list all users
 router.get('/', requireAdmin, (req, res) => {
   const users = User.findAll();
@@ -126,28 +255,44 @@ router.get('/:id/edit', (req, res) => {
   if (sections.show_social_media) {
     const platforms = SocialPlatform.findAll();
     const linkRows = SocialPlatform.getUserSocialLinks(user.id);
-    const linkMap = {};
-    for (const row of linkRows) linkMap[row.platform_id] = row.value;
-    socialFields = platforms.map(p => `
-    <div class="form-group">
-      <label for="social_link_${p.id}">${escHtml(p.name)}</label>
-      <input type="text" id="social_link_${p.id}" name="social_link_${p.id}" class="form-control"
-             value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
-    </div>`).join('');
+    socialFields = renderRepeatableEntriesManager({
+      items: platforms,
+      entries: linkRows,
+      managerKind: 'social-link',
+      typeLabel: 'Platform',
+      valueLabel: 'Profile Link',
+      typeInputName: 'social_platform_id',
+      valueInputName: 'social_link_value',
+      copyText: 'Add only the social profiles this user should expose. Duplicate platform entries are allowed and can be reordered.',
+      emptyText: 'No social media profiles added yet.',
+      addButtonText: 'Add Social Profile',
+      disabledText: 'No social platforms are configured yet. Add one in Social Media before attaching it to a user.',
+      removeMessage: 'Remove this social profile entry?',
+      enableReorder: true,
+      itemIdKey: 'platform_id'
+    });
   }
 
   let connectedAccountFields = '';
   if (sections.show_connected_accounts) {
     const accountTypes = ConnectedAccountType.findAll();
     const accountRows = ConnectedAccountType.getUserConnectedAccounts(user.id);
-    const accountMap = {};
-    for (const row of accountRows) accountMap[row.account_type_id] = row.value;
-    connectedAccountFields = accountTypes.map(t => `
-    <div class="form-group">
-      <label for="connected_account_${t.id}">${escHtml(t.name)}</label>
-      <input type="text" id="connected_account_${t.id}" name="connected_account_${t.id}" class="form-control"
-             value="${escHtml(accountMap[t.id] || '')}" placeholder="${escHtml(t.placeholder)}">
-    </div>`).join('');
+    connectedAccountFields = renderRepeatableEntriesManager({
+      items: accountTypes,
+      entries: accountRows,
+      managerKind: 'connected-account',
+      typeLabel: 'Account Type',
+      valueLabel: 'Account Information',
+      typeInputName: 'connected_account_type_id',
+      valueInputName: 'connected_account_value',
+      copyText: 'Add only the connected accounts this user actually needs. Duplicate account types are allowed and can be reordered.',
+      emptyText: 'No connected accounts added yet.',
+      addButtonText: 'Add Account',
+      disabledText: 'No connected account types are configured yet. Add one in Connected Accounts before attaching it to a user.',
+      removeMessage: 'Remove this connected account entry?',
+      enableReorder: true,
+      itemIdKey: 'account_type_id'
+    });
   }
 
   res.renderTemplate('users/edit.html', {
@@ -219,14 +364,14 @@ router.post('/:id', (req, res) => {
 
     if (sections.show_social_media) {
       const platforms = SocialPlatform.findAll();
-      const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
-      SocialPlatform.upsertUserSocialLinks(numericId, links);
+      const links = buildSubmittedRepeatableEntries(req.body, 'social_platform_id', 'social_link_value', platforms, 'platform_id');
+      SocialPlatform.replaceUserSocialLinks(numericId, links);
     }
 
     if (sections.show_connected_accounts) {
       const accountTypes = ConnectedAccountType.findAll();
-      const accounts = accountTypes.map(t => ({ account_type_id: t.id, value: req.body[`connected_account_${t.id}`] || '' }));
-      ConnectedAccountType.upsertUserConnectedAccounts(numericId, accounts);
+      const accounts = buildSubmittedRepeatableEntries(req.body, 'connected_account_type_id', 'connected_account_value', accountTypes, 'account_type_id');
+      ConnectedAccountType.replaceUserConnectedAccounts(numericId, accounts);
     }
 
     req.flash('success', `Profile updated successfully`);

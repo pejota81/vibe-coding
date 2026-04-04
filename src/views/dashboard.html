@@ -44,35 +44,132 @@
     {{/if}}
 
     <div class="welcome-banner">
-      <h1>Welcome back, {{username}}!</h1>
-      <p>Manage your users and application settings below.</p>
+      <div>
+        <h1>Welcome back, {{username}}!</h1>
+        <p>Track profile progress and jump straight to the tools available to your role.</p>
+      </div>
+      <a href="/profile" class="btn btn-primary">Update My Profile</a>
     </div>
 
-    {{#if is_admin}}
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value">{{total_users}}</div>
-        <div class="stat-label">Total Users</div>
+    <div class="card dashboard-section completion-section">
+      <div class="card-header dashboard-section-header">
+        <div>
+          <p class="section-kicker">Profile completion</p>
+          <h2>Completion Overview</h2>
+        </div>
+        <a href="/profile" class="btn btn-secondary btn-sm">Open Profile</a>
+      </div>
+
+      <div class="completion-layout">
+        <div class="completion-gauge" style="--completion-angle: {{profile_completion_angle}}deg;">
+          <div class="completion-gauge-inner">
+            <div class="completion-gauge-value">{{profile_completion_percent}}%</div>
+            <div class="completion-gauge-label">Complete</div>
+          </div>
+        </div>
+
+        <div class="completion-copy">
+          <p class="completion-summary">{{profile_completion_summary}}</p>
+          <h3>Missing Sections</h3>
+          <ul class="completion-list">
+            {{profile_missing_sections_html}}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {{#if has_admin_tools}}
+    <div class="card dashboard-section">
+      <div class="card-header dashboard-section-header">
+        <div>
+          <p class="section-kicker">Administration</p>
+          <h2>Users And Roles</h2>
+        </div>
+      </div>
+
+      <div class="dashboard-feature-grid">
+        {{#if can_manage_users}}
+        <div class="feature-panel">
+          <div class="feature-panel-meta">
+            <span class="feature-panel-label">Users</span>
+            <span class="feature-panel-value">{{total_users}}</span>
+          </div>
+          <h3>Manage Users</h3>
+          <p>Create, edit, and review the people using the application.</p>
+          <a href="/users" class="btn btn-secondary">Open Users</a>
+        </div>
+        {{/if}}
+
+        {{#if can_manage_roles}}
+        <div class="feature-panel">
+          <div class="feature-panel-meta">
+            <span class="feature-panel-label">Roles</span>
+            <span class="feature-panel-value">{{total_roles}}</span>
+          </div>
+          <h3>Manage Roles</h3>
+          <p>Adjust permissions and review how users are distributed across roles.</p>
+          <a href="/roles" class="btn btn-secondary">Open Roles</a>
+
+          <div class="role-distribution">
+            <h4>Users By Role</h4>
+            <ul class="metric-list">
+              {{role_distribution_html}}
+            </ul>
+          </div>
+        </div>
+        {{/if}}
       </div>
     </div>
     {{/if}}
 
-    <div class="card">
-      <div class="card-header">
-        <h2>Quick Links</h2>
+    {{#if has_feature_tools}}
+    <div class="card dashboard-section">
+      <div class="card-header dashboard-section-header">
+        <div>
+          <p class="section-kicker">Configuration</p>
+          <h2>Profile Features</h2>
+        </div>
       </div>
-      <div class="quick-links">
-        {{#if is_admin}}
-        <a href="/users" class="btn btn-secondary">👥 Manage Users</a>
-        <a href="/users/new" class="btn btn-primary">➕ Add New User</a>
-        <a href="/roles" class="btn btn-secondary">🔑 Manage Roles</a>
-        <a href="/profile-fields" class="btn btn-secondary">🪪 Profile Fields</a>
-        <a href="/social-platforms" class="btn btn-secondary">📱 Social Media</a>
-        <a href="/connected-accounts" class="btn btn-secondary">🔗 Connected Accounts</a>
+
+      <div class="dashboard-feature-grid dashboard-feature-grid-compact">
+        {{#if can_manage_profile_fields}}
+        <div class="feature-panel">
+          <div class="feature-panel-meta">
+            <span class="feature-panel-label">Profile fields</span>
+            <span class="feature-panel-value">{{profile_field_count}}</span>
+          </div>
+          <h3>Profile Fields</h3>
+          <p>Control the personal information fields shown on user profiles.</p>
+          <a href="/profile-fields" class="btn btn-secondary">Open Profile Fields</a>
+        </div>
         {{/if}}
-        <a href="/profile" class="btn btn-secondary">👤 My Profile</a>
+
+        {{#if can_manage_social_platforms}}
+        <div class="feature-panel">
+          <div class="feature-panel-meta">
+            <span class="feature-panel-label">Social media</span>
+            <span class="feature-panel-value">{{social_platform_count}}</span>
+          </div>
+          <h3>Social Media</h3>
+          <p>Manage the available social platforms users can add to their profile.</p>
+          <a href="/social-platforms" class="btn btn-secondary">Open Social Media</a>
+        </div>
+        {{/if}}
+
+        {{#if can_manage_connected_accounts}}
+        <div class="feature-panel">
+          <div class="feature-panel-meta">
+            <span class="feature-panel-label">Connected accounts</span>
+            <span class="feature-panel-value">{{connected_account_count}}</span>
+          </div>
+          <h3>Connected Accounts</h3>
+          <p>Manage the external account types users can connect to their profile.</p>
+          <a href="/connected-accounts" class="btn btn-secondary">Open Connected Accounts</a>
+        </div>
+        {{/if}}
       </div>
     </div>
+    {{/if}}
 
     {{#if apple_configured}}
     <div class="card">
