@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Vibe Coding</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">Vibe Coding</a>
+    <ul class="navbar-nav">
+      {{#if is_admin}}
+      <li><a href="/users">Users</a></li>
+      <li><a href="/settings">⚙️ Settings</a></li>
+      {{/if}}
+      <li class="navbar-user">👤 {{username}}</li>
+      <li>
+        <form method="POST" action="/logout" style="margin:0">
+          <input type="hidden" name="_csrf" value="{{csrf_token}}">
+          <button type="submit" class="btn btn-danger btn-sm">Logout</button>
+        </form>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    {{#if success}}
+    <div class="alert alert-success">{{success}}</div>
+    {{/if}}
+
+    {{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+    {{/if}}
+
+    <div class="card" style="max-width:680px;margin:0 auto">
+      <div class="card-header">
+        <h2>Apple Sign In Settings</h2>
+        <a href="/dashboard" class="btn btn-secondary btn-sm">← Back</a>
+      </div>
+
+      <p style="margin-bottom:1.25rem;color:#555;font-size:.95rem">
+        Configure your <strong>Sign in with Apple</strong> credentials from the
+        <a href="https://developer.apple.com/account/" target="_blank" rel="noopener noreferrer">Apple Developer portal</a>.
+        Once saved, users will see a <em>Connect with Apple</em> button on their dashboard.
+      </p>
+
+      <form method="POST" action="/settings/apple">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
+
+        <div class="form-group">
+          <label for="apple_team_id">Team ID</label>
+          <input type="text" id="apple_team_id" name="apple_team_id" class="form-control"
+                 value="{{apple_team_id}}" placeholder="e.g. ABCDE12345" required>
+          <p class="hint">Your 10-character Apple Developer Team ID (found under Membership in the developer portal).</p>
+        </div>
+
+        <div class="form-group">
+          <label for="apple_client_id">Services ID (Client ID)</label>
+          <input type="text" id="apple_client_id" name="apple_client_id" class="form-control"
+                 value="{{apple_client_id}}" placeholder="e.g. com.example.app.signin" required>
+          <p class="hint">The identifier of the Services ID you created for Sign in with Apple (not your App ID).</p>
+        </div>
+
+        <div class="form-group">
+          <label for="apple_key_id">Key ID</label>
+          <input type="text" id="apple_key_id" name="apple_key_id" class="form-control"
+                 value="{{apple_key_id}}" placeholder="e.g. ABCDE12345" required>
+          <p class="hint">The Key ID shown when you created your Sign in with Apple private key.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="apple_private_key">Private Key (PEM)</label>
+          <textarea id="apple_private_key" name="apple_private_key" class="form-control" rows="8"
+                    placeholder="-----BEGIN EC PRIVATE KEY-----&#10;...&#10;-----END EC PRIVATE KEY-----" required>{{apple_private_key}}</textarea>
+          <p class="hint">Paste the full contents of the .p8 file you downloaded from the Apple Developer portal.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="apple_redirect_uri">Redirect URI</label>
+          <input type="url" id="apple_redirect_uri" name="apple_redirect_uri" class="form-control"
+                 value="{{apple_redirect_uri}}" placeholder="https://yourdomain.com/auth/apple/callback">
+          <p class="hint">Must match the Return URL registered in your Apple Services ID.</p>
+        </div>
+
+        <div style="margin-top:1.5rem">
+          <button type="submit" class="btn btn-primary">Save Apple Sign In Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

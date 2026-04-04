@@ -112,6 +112,7 @@ app.get('/dashboard', (req, res) => {
 
 app.use('/', authRouter);
 app.use('/users', require('./routes/users'));
+app.use('/settings', require('./routes/settings'));
 
 // 404 handler
 app.use((req, res) => {

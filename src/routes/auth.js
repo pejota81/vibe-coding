@@ -178,11 +178,14 @@ router.get('/auth/apple/callback', requireAuth, async (req, res) => {
 });
 
 function getAppleConfig() {
-  const privateKey = (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-  const teamId = process.env.APPLE_TEAM_ID;
-  const clientId = process.env.APPLE_CLIENT_ID;
-  const keyId = process.env.APPLE_KEY_ID;
-  const redirectUri = process.env.APPLE_REDIRECT_URI || 'http://localhost:3000/auth/apple/callback';
+  const Settings = require('../models/settings');
+  // Env vars take precedence; DB values are used as fallback
+  const privateKeyFromEnv = (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const privateKey = privateKeyFromEnv || (Settings.get('apple_private_key') || '');
+  const teamId = process.env.APPLE_TEAM_ID || Settings.get('apple_team_id') || '';
+  const clientId = process.env.APPLE_CLIENT_ID || Settings.get('apple_client_id') || '';
+  const keyId = process.env.APPLE_KEY_ID || Settings.get('apple_key_id') || '';
+  const redirectUri = process.env.APPLE_REDIRECT_URI || Settings.get('apple_redirect_uri') || 'http://localhost:3000/auth/apple/callback';
 
   return {
     privateKey,
