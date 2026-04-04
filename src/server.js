@@ -58,13 +58,16 @@ function renderTemplate(res, templateName, data = {}) {
   }
 
   // Handle {{#if key}}...{{/if}} conditionals (supports nesting by resolving innermost pairs first)
+  // The regex matches {{#if X}}...{{/if}} blocks whose body does NOT contain another {{#if,
+  // so nested structures are resolved from the inside out across iterations.
   let prev;
+  let maxIter = 50;
   do {
     prev = html;
     html = html.replace(/\{\{#if (\w+)\}\}((?:(?!\{\{#if )[\s\S])*?)\{\{\/if\}\}/g, (_, key, content) => {
       return data[key] ? content : '';
     });
-  } while (html !== prev);
+  } while (html !== prev && --maxIter > 0);
 
   // Clear any remaining placeholders
   html = html.replace(/\{\{[^}]+\}\}/g, '');
