@@ -14,6 +14,13 @@ function escHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function normalizeCheckbox(value) {
+  if (Array.isArray(value)) {
+    return value.some(item => item === '1' || item === 'on');
+  }
+  return value === '1' || value === 'on';
+}
+
 // List all roles
 router.get('/', (req, res) => {
   const roles = Role.findAll();
@@ -61,6 +68,9 @@ router.get('/new', (req, res) => {
 
   res.renderTemplate('roles/new.html', {
     permissions_html: permsHtml,
+    show_personal_info_checked: 'checked',
+    show_social_media_checked: 'checked',
+    show_connected_accounts_checked: 'checked',
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
@@ -68,8 +78,11 @@ router.get('/new', (req, res) => {
 
 // Create role
 router.post('/', (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, show_personal_info, show_social_media, show_connected_accounts } = req.body;
   const permissionIds = [].concat(req.body.permissions || []).map(Number);
+  const showPersonalInfo = normalizeCheckbox(show_personal_info);
+  const showSocialMedia = normalizeCheckbox(show_social_media);
+  const showConnectedAccounts = normalizeCheckbox(show_connected_accounts);
 
   if (!name || !name.trim()) {
     req.flash('error', 'Role name is required');
@@ -82,7 +95,13 @@ router.post('/', (req, res) => {
   }
 
   try {
-    const role = Role.create({ name: name.trim(), description: description || '' });
+    const role = Role.create({
+      name: name.trim(),
+      description: description || '',
+      show_personal_info: showPersonalInfo ? 1 : 0,
+      show_social_media: showSocialMedia ? 1 : 0,
+      show_connected_accounts: showConnectedAccounts ? 1 : 0
+    });
     Role.setPermissions(role.id, permissionIds);
     req.flash('success', `Role "${role.name}" created successfully`);
     res.redirect('/roles');
@@ -117,6 +136,9 @@ router.get('/:id/edit', (req, res) => {
     role_description: escHtml(role.description),
     role_protected: role.protected ? 'true' : '',
     permissions_html: permsHtml,
+    show_personal_info_checked: role.show_personal_info ? 'checked' : '',
+    show_social_media_checked: role.show_social_media ? 'checked' : '',
+    show_connected_accounts_checked: role.show_connected_accounts ? 'checked' : '',
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
@@ -130,8 +152,11 @@ router.post('/:id', (req, res) => {
     return res.redirect('/roles');
   }
 
-  const { name, description } = req.body;
+  const { name, description, show_personal_info, show_social_media, show_connected_accounts } = req.body;
   const permissionIds = [].concat(req.body.permissions || []).map(Number);
+  const showPersonalInfo = normalizeCheckbox(show_personal_info);
+  const showSocialMedia = normalizeCheckbox(show_social_media);
+  const showConnectedAccounts = normalizeCheckbox(show_connected_accounts);
 
   if (!name || !name.trim()) {
     req.flash('error', 'Role name is required');
@@ -147,7 +172,13 @@ router.post('/:id', (req, res) => {
   try {
     // Protected roles keep their name to preserve referential integrity with users.role
     const updatedName = role.protected ? role.name : name.trim();
-    Role.update(role.id, { name: updatedName, description: description || '' });
+    Role.update(role.id, {
+      name: updatedName,
+      description: description || '',
+      show_personal_info: showPersonalInfo ? 1 : 0,
+      show_social_media: showSocialMedia ? 1 : 0,
+      show_connected_accounts: showConnectedAccounts ? 1 : 0
+    });
     Role.setPermissions(role.id, permissionIds);
     req.flash('success', `Role "${updatedName}" updated successfully`);
     res.redirect('/roles');

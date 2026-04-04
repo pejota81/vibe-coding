@@ -12,19 +12,32 @@ function findByName(name) {
   return db.prepare('SELECT * FROM roles WHERE name = ?').get(name);
 }
 
-function create({ name, description = '' }) {
+function create({ name, description = '', show_personal_info = 1, show_social_media = 1, show_connected_accounts = 1 }) {
   const result = db.prepare(
-    'INSERT INTO roles (name, description) VALUES (?, ?)'
-  ).run(name, description);
+    'INSERT INTO roles (name, description, show_personal_info, show_social_media, show_connected_accounts) VALUES (?, ?, ?, ?, ?)'
+  ).run(name, description, show_personal_info ? 1 : 0, show_social_media ? 1 : 0, show_connected_accounts ? 1 : 0);
   return findById(result.lastInsertRowid);
 }
 
-function update(id, { name, description }) {
+function getSectionVisibility(roleName) {
+  const row = db.prepare('SELECT show_personal_info, show_social_media, show_connected_accounts FROM roles WHERE name = ?').get(roleName || '');
+  return {
+    show_personal_info: !!row?.show_personal_info,
+    show_social_media: !!row?.show_social_media,
+    show_connected_accounts: !!row?.show_connected_accounts
+  };
+}
+
+function update(id, { name, description, show_personal_info, show_social_media, show_connected_accounts }) {
   const role = findById(id);
   if (!role) return null;
   const newName = name ?? role.name;
   const newDesc = description ?? role.description;
-  db.prepare('UPDATE roles SET name = ?, description = ? WHERE id = ?').run(newName, newDesc, id);
+  const newShowPersonalInfo = show_personal_info !== undefined ? (show_personal_info ? 1 : 0) : role.show_personal_info;
+  const newShowSocialMedia = show_social_media !== undefined ? (show_social_media ? 1 : 0) : role.show_social_media;
+  const newShowConnectedAccounts = show_connected_accounts !== undefined ? (show_connected_accounts ? 1 : 0) : role.show_connected_accounts;
+  db.prepare('UPDATE roles SET name = ?, description = ?, show_personal_info = ?, show_social_media = ?, show_connected_accounts = ? WHERE id = ?')
+    .run(newName, newDesc, newShowPersonalInfo, newShowSocialMedia, newShowConnectedAccounts, id);
   return findById(id);
 }
 
@@ -72,5 +85,6 @@ module.exports = {
   delete: deleteRole,
   findAllPermissions,
   getPermissions,
-  setPermissions
+  setPermissions,
+  getSectionVisibility,
 };

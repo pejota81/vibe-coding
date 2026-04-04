@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const ProfileFieldType = require('../models/profile_field_type');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 
 const INPUT_TYPES = ['text', 'email', 'date', 'url', 'number', 'tel'];
 
 router.use(requireAuth);
-router.use(requireAdmin);
+router.use(requirePermission('manage_profile_fields'));
 
 // List all field types
 router.get('/', (req, res) => {

@@ -13,8 +13,14 @@
       {{#if is_admin}}
       <li><a href="/users">Users</a></li>
       <li><a href="/roles">Roles</a></li>
-      <li><a href="/profile-fields">🪹 Profile Fields</a></li>
+      {{/if}}
+      {{#if can_manage_profile_fields}}
+      <li><a href="/profile-fields">🪪 Profile Fields</a></li>
+      {{/if}}
+      {{#if can_manage_social_platforms}}
       <li><a href="/social-platforms">📱 Social Media</a></li>
+      {{/if}}
+      {{#if can_manage_connected_accounts}}
       <li><a href="/connected-accounts">🔗 Connected Accounts</a></li>
       {{/if}}
       <li class="navbar-user"><a href="/profile" style="color:#e94560;text-decoration:none">👤 {{username}}</a></li>
@@ -53,6 +59,24 @@
         <div class="form-group">
           <label>Permissions</label>
           {{permissions_html}}
+        </div>
+        <div class="form-group">
+          <label>Profile Section Visibility</label>
+          <div class="form-check">
+            <input type="hidden" name="show_personal_info" value="0">
+            <input type="checkbox" id="show_personal_info" name="show_personal_info" value="on" {{show_personal_info_checked}}>
+            <label for="show_personal_info">Personal Information</label>
+          </div>
+          <div class="form-check">
+            <input type="hidden" name="show_social_media" value="0">
+            <input type="checkbox" id="show_social_media" name="show_social_media" value="on" {{show_social_media_checked}}>
+            <label for="show_social_media">Social Media</label>
+          </div>
+          <div class="form-check">
+            <input type="hidden" name="show_connected_accounts" value="0">
+            <input type="checkbox" id="show_connected_accounts" name="show_connected_accounts" value="on" {{show_connected_accounts_checked}}>
+            <label for="show_connected_accounts">Connected Accounts</label>
+          </div>
         </div>
         <div style="display:flex;gap:.75rem;margin-top:1.5rem">
           <button type="submit" class="btn btn-primary">Create Role</button>
