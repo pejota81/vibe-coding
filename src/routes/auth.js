@@ -208,4 +208,4 @@ function decodeJwtPayload(token) {
 }
 
 router.getAppleConfig = getAppleConfig;
-module.exports = router;
+module.exports = { router, getAppleConfig };
