@@ -70,7 +70,11 @@ function renderTemplate(res, templateName, data = {}) {
 // Attach renderTemplate to res
 app.use((req, res, next) => {
   res.renderTemplate = (templateName, data) => {
-    const merged = Object.assign({ csrf_token: res.locals.csrfToken || '' }, data);
+    const merged = Object.assign({
+      csrf_token: res.locals.csrfToken || '',
+      is_admin: req.session && req.session.role === 'admin' ? true : false,
+      current_user_id: (req.session && req.session.userId) || ''
+    }, data);
     return renderTemplate(res, templateName, merged);
   };
   next();

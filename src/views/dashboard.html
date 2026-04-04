@@ -10,7 +10,9 @@
   <nav class="navbar">
     <a href="/dashboard" class="navbar-brand">Vibe Coding</a>
     <ul class="navbar-nav">
+      {{#if is_admin}}
       <li><a href="/users">Users</a></li>
+      {{/if}}
       <li class="navbar-user">👤 {{username}}</li>
       <li>
         <form method="POST" action="/logout" style="margin:0">
@@ -35,20 +37,25 @@
       <p>Manage your users and application settings below.</p>
     </div>
 
+    {{#if is_admin}}
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-value">{{total_users}}</div>
         <div class="stat-label">Total Users</div>
       </div>
     </div>
+    {{/if}}
 
     <div class="card">
       <div class="card-header">
         <h2>Quick Links</h2>
       </div>
       <div class="quick-links">
+        {{#if is_admin}}
         <a href="/users" class="btn btn-secondary">👥 Manage Users</a>
         <a href="/users/new" class="btn btn-primary">➕ Add New User</a>
+        {{/if}}
+        <a href="/users/{{current_user_id}}/edit" class="btn btn-secondary">👤 My Profile</a>
       </div>
     </div>
 
