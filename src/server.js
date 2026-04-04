@@ -125,7 +125,65 @@ app.get('/profile', (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.redirect('/login');
   }
-  res.redirect(`/users/${req.session.userId}/edit`);
+  const User = require('./models/user');
+  const user = User.findById(req.session.userId);
+  if (!user) {
+    req.flash('error', 'User not found');
+    return res.redirect('/dashboard');
+  }
+  res.renderTemplate('profile.html', {
+    user_username: user.username,
+    user_email: user.email,
+    user_role: user.role,
+    member_since: new Date(user.created_at).toLocaleDateString(),
+    username: req.session.username,
+    success: (req.flash('success') || []).join(' '),
+    error: (req.flash('error') || []).join(' ')
+  });
+});
+
+app.post('/profile', (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.redirect('/login');
+  }
+  const User = require('./models/user');
+  const { username, email, password } = req.body;
+  const id = req.session.userId;
+
+  if (!username || !email) {
+    req.flash('error', 'Username and email are required');
+    return res.redirect('/profile');
+  }
+
+  const existing = User.findById(id);
+  if (!existing) {
+    req.flash('error', 'User not found');
+    return res.redirect('/dashboard');
+  }
+
+  const byUsername = User.findByUsername(username);
+  if (byUsername && byUsername.id !== id) {
+    req.flash('error', 'Username already taken');
+    return res.redirect('/profile');
+  }
+
+  const byEmail = User.findByEmail(email);
+  if (byEmail && byEmail.id !== id) {
+    req.flash('error', 'Email already taken');
+    return res.redirect('/profile');
+  }
+
+  try {
+    const updatedUser = User.update(id, { username, email, password: password || null });
+    if (updatedUser) {
+      req.session.username = updatedUser.username;
+    }
+    req.flash('success', 'Profile updated successfully');
+    res.redirect('/profile');
+  } catch (err) {
+    req.flash('error', 'Error updating profile: ' + err.message);
+    res.redirect('/profile');
+  }
 });
 
 // 404 handler
