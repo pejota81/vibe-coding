@@ -23,10 +23,9 @@ router.get('/', (req, res) => {
     const perms = Role.getPermissions(r.id).map(p => escHtml(p.name)).join(', ') || '<em>none</em>';
     const deleteBtn = r.protected
       ? `<button class="btn btn-danger btn-sm" disabled title="Built-in role cannot be deleted">Delete</button>`
-      : `<form method="POST" action="/roles/${r.id}/delete" style="display:inline">
+      : `<form method="POST" action="/roles/${r.id}/delete" class="delete-role-form" style="display:inline" data-rolename="${escHtml(r.name)}">
            <input type="hidden" name="_csrf" value="${escHtml(csrfToken)}">
-           <button type="submit" class="btn btn-danger btn-sm"
-                   onclick="return confirm('Delete role \'${escHtml(r.name)}\'?')">Delete</button>
+           <button type="submit" class="btn btn-danger btn-sm">Delete</button>
          </form>`;
     return `
       <tr>
