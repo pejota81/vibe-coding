@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Vibe Coding</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">Vibe Coding</a>
+    <ul class="navbar-nav">
+      <li><a href="/users">Users</a></li>
+      <li class="navbar-user">👤 {{username}}</li>
+      <li>
+        <form method="POST" action="/logout" style="margin:0">
+          <button type="submit" class="btn btn-danger btn-sm">Logout</button>
+        </form>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="welcome-banner">
+      <h1>Welcome back, {{username}}!</h1>
+      <p>Manage your users and application settings below.</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{total_users}}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Quick Links</h2>
+      </div>
+      <div class="quick-links">
+        <a href="/users" class="btn btn-secondary">👥 Manage Users</a>
+        <a href="/users/new" class="btn btn-primary">➕ Add New User</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
