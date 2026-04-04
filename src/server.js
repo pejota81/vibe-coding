@@ -122,6 +122,7 @@ app.use('/roles', require('./routes/roles'));
 app.use('/settings', require('./routes/settings'));
 app.use('/social-platforms', require('./routes/social_platforms'));
 app.use('/connected-accounts', require('./routes/connected_accounts'));
+app.use('/profile-fields', require('./routes/profile_fields'));
 
 function escHtml(str) {
   return String(str)
@@ -139,12 +140,31 @@ app.get('/profile', (req, res) => {
   const User = require('./models/user');
   const SocialPlatform = require('./models/social_platform');
   const ConnectedAccountType = require('./models/connected_account_type');
+  const ProfileFieldType = require('./models/profile_field_type');
   const user = User.findById(req.session.userId);
   if (!user) {
     req.flash('error', 'User not found');
     return res.redirect('/dashboard');
   }
 
+  // Dynamic personal info fields
+  const profileFieldTypes = ProfileFieldType.findAll();
+  const profileFieldRows = ProfileFieldType.getUserProfileFields(req.session.userId);
+  const profileFieldMap = {};
+  for (const row of profileFieldRows) profileFieldMap[row.field_type_id] = row.value;
+
+  const personalInfoFields = profileFieldTypes.map(f => {
+    const required = f.is_mandatory ? ' required' : '';
+    const reqLabel = f.is_mandatory ? ' <span style="color:#e94560">*</span>' : '';
+    return `
+    <div class="form-group">
+      <label for="profile_field_${f.id}">${escHtml(f.name)}${reqLabel}</label>
+      <input type="${escHtml(f.input_type)}" id="profile_field_${f.id}" name="profile_field_${f.id}" class="form-control"
+             value="${escHtml(profileFieldMap[f.id] || '')}" placeholder="${escHtml(f.placeholder)}"${required}>
+    </div>`;
+  }).join('');
+
+  // Dynamic social links
   const platforms = SocialPlatform.findAll();
   const linkRows = SocialPlatform.getUserSocialLinks(req.session.userId);
   const linkMap = {};
@@ -157,6 +177,7 @@ app.get('/profile', (req, res) => {
              value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
     </div>`).join('');
 
+  // Dynamic connected accounts
   const accountTypes = ConnectedAccountType.findAll();
   const accountRows = ConnectedAccountType.getUserConnectedAccounts(req.session.userId);
   const accountMap = {};
@@ -173,10 +194,7 @@ app.get('/profile', (req, res) => {
     user_username: user.username,
     user_email: user.email,
     user_role: user.role,
-    user_first_name: user.first_name || '',
-    user_last_name: user.last_name || '',
-    user_birthday: user.birthday || '',
-    user_website: user.website || '',
+    personal_info_fields: personalInfoFields,
     social_links_fields: socialFields,
     connected_accounts_fields: connectedAccountFields,
     member_since: new Date(user.created_at).toLocaleDateString(),
@@ -193,14 +211,22 @@ app.post('/profile', (req, res) => {
   const User = require('./models/user');
   const SocialPlatform = require('./models/social_platform');
   const ConnectedAccountType = require('./models/connected_account_type');
-  const { username, email, password,
-    first_name, last_name, birthday, website
-  } = req.body;
+  const ProfileFieldType = require('./models/profile_field_type');
+  const { username, email, password } = req.body;
   const id = req.session.userId;
 
   if (!username || !email) {
     req.flash('error', 'Username and email are required');
     return res.redirect('/profile');
+  }
+
+  // Validate mandatory personal info fields
+  const allProfileFieldTypes = ProfileFieldType.findAll();
+  for (const f of allProfileFieldTypes) {
+    if (f.is_mandatory && !req.body[`profile_field_${f.id}`]) {
+      req.flash('error', `"${f.name}" is required`);
+      return res.redirect('/profile');
+    }
   }
 
   const existing = User.findById(id);
@@ -222,12 +248,14 @@ app.post('/profile', (req, res) => {
   }
 
   try {
-    const updatedUser = User.update(id, { username, email, password: password || null,
-      first_name, last_name, birthday: birthday || null, website
-    });
+    const updatedUser = User.update(id, { username, email, password: password || null });
     if (updatedUser) {
       req.session.username = updatedUser.username;
     }
+
+    // Save dynamic personal info fields
+    const profileFields = allProfileFieldTypes.map(f => ({ field_type_id: f.id, value: req.body[`profile_field_${f.id}`] || '' }));
+    ProfileFieldType.upsertUserProfileFields(id, profileFields);
 
     // Save dynamic social links
     const platforms = SocialPlatform.findAll();

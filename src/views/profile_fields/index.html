@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connected Account Types — Vibe Coding</title>
+  <title>Personal Info Fields — Vibe Coding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
       <li><a href="/users">Users</a></li>
       <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
-      <li><a href="/profile-fields">🪹 Profile Fields</a></li>
+      <li><a href="/profile-fields">🪪 Profile Fields</a></li>
       <li><a href="/social-platforms">📱 Social Media</a></li>
       <li><a href="/connected-accounts">🔗 Connected Accounts</a></li>
       {{/if}}
@@ -39,8 +39,8 @@
 
     <div class="card">
       <div class="card-header">
-        <h2>Connected Account Types</h2>
-        <a href="/connected-accounts/new" class="btn btn-primary btn-sm">➕ Add Account Type</a>
+        <h2>Personal Info Fields</h2>
+        <a href="/profile-fields/new" class="btn btn-primary btn-sm">➕ Add Field</a>
       </div>
 
       <div class="table-wrapper">
@@ -49,12 +49,14 @@
             <tr>
               <th>Order</th>
               <th>Name</th>
-              <th>Email / Handle Example</th>
+              <th>Input Type</th>
+              <th>Placeholder</th>
+              <th>Mandatory</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {{types_table}}
+            {{fields_table}}
           </tbody>
         </table>
       </div>

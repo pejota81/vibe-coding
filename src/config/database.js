@@ -115,6 +115,62 @@ if (!existingColumns.includes('google_account')) {
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_apple_sub ON users(apple_sub) WHERE apple_sub IS NOT NULL');
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS profile_field_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    input_type TEXT NOT NULL DEFAULT 'text',
+    placeholder TEXT DEFAULT '',
+    is_mandatory INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_profile_fields (
+    user_id INTEGER NOT NULL,
+    field_type_id INTEGER NOT NULL,
+    value TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (user_id, field_type_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (field_type_id) REFERENCES profile_field_types(id) ON DELETE CASCADE
+  )
+`);
+
+// Seed the 4 default personal info field types and migrate any existing user data
+const defaultProfileFields = [
+  { name: 'First Name', input_type: 'text', placeholder: '',                    mandatory: 0, order: 10, col: 'first_name' },
+  { name: 'Last Name',  input_type: 'text', placeholder: '',                    mandatory: 0, order: 20, col: 'last_name'  },
+  { name: 'Birthday',   input_type: 'date', placeholder: '',                    mandatory: 0, order: 30, col: 'birthday'   },
+  { name: 'Website',    input_type: 'url',  placeholder: 'https://example.com', mandatory: 0, order: 40, col: 'website'    },
+];
+
+for (const f of defaultProfileFields) {
+  const exists = db.prepare('SELECT id FROM profile_field_types WHERE name = ?').get(f.name);
+  if (!exists) {
+    db.prepare('INSERT INTO profile_field_types (name, input_type, placeholder, is_mandatory, sort_order) VALUES (?, ?, ?, ?, ?)').run(f.name, f.input_type, f.placeholder, f.mandatory, f.order);
+  }
+}
+
+// One-time migration: copy data from old personal info columns into user_profile_fields
+if (existingColumns.includes('first_name')) {
+  const upsertField = db.prepare(
+    'INSERT OR IGNORE INTO user_profile_fields (user_id, field_type_id, value) VALUES (?, ?, ?)'
+  );
+  for (const f of defaultProfileFields) {
+    if (!existingColumns.includes(f.col)) continue;
+    const fieldType = db.prepare('SELECT id FROM profile_field_types WHERE name = ?').get(f.name);
+    if (!fieldType) continue;
+    const usersWithValue = db.prepare(
+      `SELECT id, ${f.col} AS val FROM users WHERE ${f.col} IS NOT NULL AND ${f.col} != ''`
+    ).all();
+    for (const u of usersWithValue) {
+      if (u.val) upsertField.run(u.id, fieldType.id, u.val);
+    }
+  }
+}
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS social_platforms (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
