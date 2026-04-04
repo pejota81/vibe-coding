@@ -59,23 +59,11 @@ router.get('/new', (req, res) => {
       </label>
     </div>`).join('');
 
-  const sectionsHtml = `
-    <div class="form-check">
-      <input type="checkbox" id="show_personal_info" name="show_personal_info" value="on" checked>
-      <label for="show_personal_info">Personal Information</label>
-    </div>
-    <div class="form-check">
-      <input type="checkbox" id="show_social_media" name="show_social_media" value="on" checked>
-      <label for="show_social_media">Social Media</label>
-    </div>
-    <div class="form-check">
-      <input type="checkbox" id="show_connected_accounts" name="show_connected_accounts" value="on" checked>
-      <label for="show_connected_accounts">Connected Accounts</label>
-    </div>`;
-
   res.renderTemplate('roles/new.html', {
     permissions_html: permsHtml,
-    sections_html: sectionsHtml,
+    show_personal_info_checked: 'checked',
+    show_social_media_checked: 'checked',
+    show_connected_accounts_checked: 'checked',
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
@@ -132,27 +120,15 @@ router.get('/:id/edit', (req, res) => {
       </label>
     </div>`).join('');
 
-  const sectionsHtml = `
-    <div class="form-check">
-      <input type="checkbox" id="show_personal_info" name="show_personal_info" value="on" ${role.show_personal_info ? 'checked' : ''}>
-      <label for="show_personal_info">Personal Information</label>
-    </div>
-    <div class="form-check">
-      <input type="checkbox" id="show_social_media" name="show_social_media" value="on" ${role.show_social_media ? 'checked' : ''}>
-      <label for="show_social_media">Social Media</label>
-    </div>
-    <div class="form-check">
-      <input type="checkbox" id="show_connected_accounts" name="show_connected_accounts" value="on" ${role.show_connected_accounts ? 'checked' : ''}>
-      <label for="show_connected_accounts">Connected Accounts</label>
-    </div>`;
-
   res.renderTemplate('roles/edit.html', {
     role_id: role.id,
     role_name: escHtml(role.name),
     role_description: escHtml(role.description),
     role_protected: role.protected ? 'true' : '',
     permissions_html: permsHtml,
-    sections_html: sectionsHtml,
+    show_personal_info_checked: role.show_personal_info ? 'checked' : '',
+    show_social_media_checked: role.show_social_media ? 'checked' : '',
+    show_connected_accounts_checked: role.show_connected_accounts ? 'checked' : '',
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
