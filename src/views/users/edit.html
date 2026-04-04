@@ -35,64 +35,118 @@
   </nav>
 
   <div class="container">
-    <div class="card" style="max-width:560px;margin:0 auto">
-      <div class="card-header">
-        <h2>Edit User</h2>
-        <a href="{{back_url}}" class="btn btn-secondary btn-sm">← Back</a>
+    <div style="max-width:560px;margin:0 auto">
+      <div class="card profile-overview-card" style="margin-bottom:1.5rem">
+        <div class="card-header">
+          <h2>Edit User</h2>
+          <a href="{{back_url}}" class="btn btn-secondary btn-sm">← Back</a>
+        </div>
+        <div class="profile-overview-body">
+          <div class="profile-meta-grid">
+            <p><strong>Username:</strong> {{user_username}}</p>
+            <p><strong>Email:</strong> {{user_email}}</p>
+          </div>
+        </div>
       </div>
 
       {{#if error}}
       <div class="alert alert-danger">{{error}}</div>
       {{/if}}
 
-      <form method="POST" action="/users/{{user_id}}">
+      <form method="POST" action="/users/{{user_id}}" class="profile-form-stack">
         <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-        <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Account</h4>
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">A</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Core account</p>
+                <h3>Account</h3>
+                <p class="section-description">Primary login details and the assigned role for this user.</p>
+              </div>
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" class="form-control"
-                 value="{{user_username}}" required>
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control"
+                   value="{{user_username}}" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control"
+                   value="{{user_email}}" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="Leave blank to keep current password">
+            <p class="hint">Leave blank to keep the existing password.</p>
+          </div>
+          {{#if is_admin}}
+          <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" name="role" class="form-control">
+              {{role_options}}
+            </select>
+          </div>
+          {{/if}}
         </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" class="form-control"
-                 value="{{user_email}}" required>
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" class="form-control"
-                 placeholder="Leave blank to keep current password">
-          <p class="hint">Leave blank to keep the existing password.</p>
-        </div>
-        {{#if is_admin}}
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" name="role" class="form-control">
-            {{role_options}}
-          </select>
-        </div>
-        {{/if}}
 
         {{#if show_personal_info}}
-        <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Personal Information</h4>
-        {{personal_info_fields}}
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">P</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Role-visible section</p>
+                <h3>Personal Information</h3>
+                <p class="section-description">Personal profile details available for this user role.</p>
+              </div>
+            </div>
+          </div>
+          {{personal_info_fields}}
+        </div>
         {{/if}}
 
         {{#if show_social_media}}
-        <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Social Media</h4>
-        {{social_links_fields}}
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">S</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Role-visible section</p>
+                <h3>Social Media</h3>
+                <p class="section-description">Social platforms configured for this user profile.</p>
+              </div>
+            </div>
+          </div>
+          {{social_links_fields}}
+        </div>
         {{/if}}
 
         {{#if show_connected_accounts}}
-        <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Connected Accounts</h4>
-        {{connected_accounts_fields}}
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">C</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Role-visible section</p>
+                <h3>Connected Accounts</h3>
+                <p class="section-description">External accounts and services linked to this user.</p>
+              </div>
+            </div>
+          </div>
+          {{connected_accounts_fields}}
+        </div>
         {{/if}}
 
-        <div style="display:flex;gap:.75rem;margin-top:1.5rem">
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-          <a href="{{back_url}}" class="btn btn-secondary">Cancel</a>
+        <div class="card profile-actions-card">
+          <div class="profile-actions-row">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{back_url}}" class="btn btn-secondary">Cancel</a>
+          </div>
         </div>
       </form>
     </div>

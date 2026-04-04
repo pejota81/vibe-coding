@@ -45,26 +45,46 @@
 
     <div style="max-width:560px;margin:0 auto">
 
-      <div class="card" style="margin-bottom:1.5rem">
+      <div class="card profile-overview-card" style="margin-bottom:1.5rem">
         <div class="card-header">
           <h2>My Profile</h2>
           <a href="/dashboard" class="btn btn-secondary btn-sm">← Dashboard</a>
         </div>
-        <div style="padding:1rem 0 .5rem">
-          <p style="margin:.25rem 0;color:#555"><strong>Member since:</strong> {{member_since}}</p>
-          <p style="margin:.25rem 0;color:#555"><strong>Role:</strong> <span class="badge badge-{{user_role}}">{{user_role}}</span></p>
+        <div class="profile-overview-body">
+          <div class="profile-meta-grid">
+            <p><strong>Member since:</strong> {{member_since}}</p>
+            <p><strong>Role:</strong> <span class="badge badge-{{user_role}}">{{user_role}}</span></p>
+          </div>
+
+          <div class="profile-progress-block">
+            <div class="profile-progress-header">
+              <strong>Profile progress</strong>
+              <span>{{profile_completion_percent}}%</span>
+            </div>
+            <div class="profile-progress-bar">
+              <span style="width: {{profile_completion_percent}}%;"></span>
+            </div>
+            <p class="profile-progress-copy">{{profile_completion_summary}}</p>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Edit Information</h3>
-        </div>
+      <form method="POST" action="/profile" class="profile-form-stack">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-        <form method="POST" action="/profile">
-          <input type="hidden" name="_csrf" value="{{csrf_token}}">
-
-          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Account</h4>
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">A</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Core account</p>
+                <h3>Account</h3>
+                <p class="section-description">Sign-in details and the primary identity for this profile.</p>
+              </div>
+            </div>
+            <span class="status-pill {{account_status_class}}">{{account_status_text}}</span>
+          </div>
+          <p class="section-status-copy">{{account_status_detail}}</p>
 
           <div class="form-group">
             <label for="username">Username</label>
@@ -84,28 +104,69 @@
                    placeholder="Leave blank to keep current password" autocomplete="new-password">
             <p class="hint">Leave blank to keep the existing password.</p>
           </div>
+        </div>
 
-          {{#if show_personal_info}}
-          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Personal Information</h4>
+        {{#if show_personal_info}}
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">P</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Role-visible section</p>
+                <h3>Personal Information</h3>
+                <p class="section-description">Custom personal details controlled by the selected role.</p>
+              </div>
+            </div>
+            <span class="status-pill {{personal_info_status_class}}">{{personal_info_status_text}}</span>
+          </div>
+          <p class="section-status-copy">{{personal_info_status_detail}}</p>
           {{personal_info_fields}}
-          {{/if}}
+        </div>
+        {{/if}}
 
-          {{#if show_social_media}}
-          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Social Media</h4>
+        {{#if show_social_media}}
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">S</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Role-visible section</p>
+                <h3>Social Media</h3>
+                <p class="section-description">Public profile links and networks visible for this role.</p>
+              </div>
+            </div>
+            <span class="status-pill {{social_media_status_class}}">{{social_media_status_text}}</span>
+          </div>
+          <p class="section-status-copy">{{social_media_status_detail}}</p>
           {{social_links_fields}}
-          {{/if}}
+        </div>
+        {{/if}}
 
-          {{#if show_connected_accounts}}
-          <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Connected Accounts</h4>
+        {{#if show_connected_accounts}}
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">C</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Role-visible section</p>
+                <h3>Connected Accounts</h3>
+                <p class="section-description">External services and sign-ins linked to this profile.</p>
+              </div>
+            </div>
+            <span class="status-pill {{connected_accounts_status_class}}">{{connected_accounts_status_text}}</span>
+          </div>
+          <p class="section-status-copy">{{connected_accounts_status_detail}}</p>
           {{connected_accounts_fields}}
-          {{/if}}
+        </div>
+        {{/if}}
 
-          <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+        <div class="card profile-actions-card">
+          <div class="profile-actions-row">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="/dashboard" class="btn btn-secondary">Cancel</a>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
 
     </div>
   </div>

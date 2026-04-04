@@ -508,6 +508,146 @@ td.actions {
   margin-bottom: .75rem;
 }
 
+.profile-form-stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.profile-overview-card {
+  overflow: hidden;
+}
+
+.profile-overview-body {
+  display: grid;
+  gap: 1rem;
+  padding-top: .5rem;
+}
+
+.profile-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .75rem;
+}
+
+.profile-meta-grid p {
+  margin: 0;
+  color: #555;
+}
+
+.profile-progress-block {
+  display: grid;
+  gap: .5rem;
+  padding: .9rem 1rem;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #f8fafe;
+}
+
+.profile-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #1a1a2e;
+}
+
+.profile-progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #e4eaf5;
+  overflow: hidden;
+}
+
+.profile-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e94560 0%, #ff8a5b 100%);
+}
+
+.profile-progress-copy {
+  color: #667085;
+  font-size: .9rem;
+}
+
+.profile-section-card,
+.profile-actions-card {
+  margin-bottom: 0;
+}
+
+.profile-section-header {
+  align-items: flex-start;
+}
+
+.section-header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: .9rem;
+}
+
+.section-icon-badge {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  color: #fff;
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  flex-shrink: 0;
+}
+
+.section-card-heading h3 {
+  color: #1a1a2e;
+  font-size: 1.15rem;
+}
+
+.section-description,
+.section-status-copy {
+  color: #667085;
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.section-description {
+  margin-top: .3rem;
+}
+
+.section-status-copy {
+  margin-bottom: 1rem;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: .35rem .8rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-pill-complete {
+  background: #e8f7ed;
+  color: #1e7e34;
+}
+
+.status-pill-incomplete {
+  background: #fff1e8;
+  color: #c05621;
+}
+
+.profile-actions-row {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
 .metric-list-item {
   display: flex;
   align-items: center;
@@ -565,6 +705,16 @@ td.actions {
 
   .completion-layout {
     grid-template-columns: 1fr;
+  }
+
+  .profile-section-header {
+    gap: .85rem;
+    flex-direction: column;
+  }
+
+  .profile-actions-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

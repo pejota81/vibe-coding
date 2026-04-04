@@ -35,42 +35,67 @@
   </nav>
 
   <div class="container">
-    <div class="card" style="max-width:560px;margin:0 auto">
-      <div class="card-header">
-        <h2>Create New User</h2>
-        <a href="/users" class="btn btn-secondary btn-sm">← Back</a>
+    <div style="max-width:560px;margin:0 auto">
+      <div class="card profile-overview-card" style="margin-bottom:1.5rem">
+        <div class="card-header">
+          <h2>Create New User</h2>
+          <a href="/users" class="btn btn-secondary btn-sm">← Back</a>
+        </div>
+        <div class="profile-overview-body">
+          <div class="profile-meta-grid">
+            <p><strong>Flow:</strong> Admin user creation</p>
+            <p><strong>Access:</strong> Users management</p>
+          </div>
+        </div>
       </div>
 
       {{#if error}}
       <div class="alert alert-danger">{{error}}</div>
       {{/if}}
 
-      <form method="POST" action="/users">
+      <form method="POST" action="/users" class="profile-form-stack">
         <input type="hidden" name="_csrf" value="{{csrf_token}}">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" class="form-control"
-                 placeholder="e.g. johndoe" required>
+
+        <div class="card profile-section-card">
+          <div class="card-header profile-section-header">
+            <div class="section-header-main">
+              <span class="section-icon-badge">A</span>
+              <div class="section-card-heading">
+                <p class="section-kicker">Core account</p>
+                <h3>Account</h3>
+                <p class="section-description">Set the main credentials and initial role for the new user.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control"
+                   placeholder="e.g. johndoe" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control"
+                   placeholder="e.g. john@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="Minimum 6 characters" required>
+          </div>
+          <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" name="role" class="form-control">
+              {{role_options}}
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" class="form-control"
-                 placeholder="e.g. john@example.com" required>
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" class="form-control"
-                 placeholder="Minimum 6 characters" required>
-        </div>
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" name="role" class="form-control">
-            {{role_options}}
-          </select>
-        </div>
-        <div style="display:flex;gap:.75rem;margin-top:1.5rem">
-          <button type="submit" class="btn btn-primary">Create User</button>
-          <a href="/users" class="btn btn-secondary">Cancel</a>
+
+        <div class="card profile-actions-card">
+          <div class="profile-actions-row">
+            <button type="submit" class="btn btn-primary">Create User</button>
+            <a href="/users" class="btn btn-secondary">Cancel</a>
+          </div>
         </div>
       </form>
     </div>

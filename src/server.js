@@ -95,72 +95,148 @@ function getPermissionSet(roleName) {
   return new Set(permRows.map((permission) => permission.name));
 }
 
-function buildDashboardProfileCompletion(currentUser, roleName) {
+function getSectionStatusMeta(isComplete, completeDetail, incompleteDetail) {
+  return {
+    statusClass: isComplete ? 'status-pill-complete' : 'status-pill-incomplete',
+    statusText: isComplete ? 'Complete' : 'Needs attention',
+    detail: isComplete ? completeDetail : incompleteDetail
+  };
+}
+
+function buildProfileSectionState(user, roleName) {
   const ProfileFieldType = require('./models/profile_field_type');
   const SocialPlatform = require('./models/social_platform');
   const ConnectedAccountType = require('./models/connected_account_type');
   const visibleSections = getRoleSectionVisibility(roleName);
-  const sections = [];
+  const accountComplete = hasContent(user?.username) && hasContent(user?.email);
+  const accountStatus = getSectionStatusMeta(
+    accountComplete,
+    'Username and email are set.',
+    'Add both a username and an email address.'
+  );
 
-  sections.push({
-    label: 'Account',
-    complete: hasContent(currentUser?.username) && hasContent(currentUser?.email),
-    hint: 'Add both a username and email address.'
-  });
+  const sectionState = {
+    account: {
+      label: 'Account',
+      complete: accountComplete,
+      ...accountStatus
+    },
+    personalInfo: {
+      label: 'Personal Information',
+      visible: visibleSections.show_personal_info,
+      complete: true,
+      statusClass: 'status-pill-complete',
+      statusText: 'Complete',
+      detail: 'Personal information is ready.'
+    },
+    socialMedia: {
+      label: 'Social Media',
+      visible: visibleSections.show_social_media,
+      complete: true,
+      statusClass: 'status-pill-complete',
+      statusText: 'Complete',
+      detail: 'Social media links are ready.'
+    },
+    connectedAccounts: {
+      label: 'Connected Accounts',
+      visible: visibleSections.show_connected_accounts,
+      complete: true,
+      statusClass: 'status-pill-complete',
+      statusText: 'Complete',
+      detail: 'Connected accounts are ready.'
+    }
+  };
 
   if (visibleSections.show_personal_info) {
     const fieldTypes = ProfileFieldType.findAll();
-    const fieldValues = ProfileFieldType.getUserProfileFields(currentUser.id);
+    const fieldValues = ProfileFieldType.getUserProfileFields(user.id);
     const fieldMap = new Map(fieldValues.map((field) => [field.field_type_id, field.value]));
     const anyPersonalValue = fieldTypes.some((field) => hasContent(fieldMap.get(field.id)));
-    const requiredFieldsComplete = fieldTypes.every((field) => {
-      if (!field.is_mandatory) {
-        return true;
-      }
-      return hasContent(fieldMap.get(field.id));
-    });
+    const requiredFieldsComplete = fieldTypes.every((field) => !field.is_mandatory || hasContent(fieldMap.get(field.id)));
+    const personalComplete = fieldTypes.length === 0 || (anyPersonalValue && requiredFieldsComplete);
+    const mandatoryCount = fieldTypes.filter((field) => field.is_mandatory).length;
 
-    sections.push({
-      label: 'Personal information',
-      complete: fieldTypes.length === 0 || (anyPersonalValue && requiredFieldsComplete),
-      hint: 'Add at least one personal detail and fill any required fields.'
-    });
+    sectionState.personalInfo = {
+      label: 'Personal Information',
+      visible: true,
+      complete: personalComplete,
+      ...getSectionStatusMeta(
+        personalComplete,
+        fieldTypes.length === 0
+          ? 'No personal info fields are configured.'
+          : 'Personal information is filled for this role.',
+        mandatoryCount > 0
+          ? 'Fill the required fields and add at least one detail.'
+          : 'Add at least one personal detail.'
+      )
+    };
   }
 
   if (visibleSections.show_social_media) {
     const platforms = SocialPlatform.findAll();
-    const links = SocialPlatform.getUserSocialLinks(currentUser.id);
-    const hasSocialLink = links.some((link) => hasContent(link.value));
+    const links = SocialPlatform.getUserSocialLinks(user.id);
+    const socialComplete = platforms.length === 0 || links.some((link) => hasContent(link.value));
 
-    sections.push({
-      label: 'Social media',
-      complete: platforms.length === 0 || hasSocialLink,
-      hint: 'Add at least one social profile link.'
-    });
+    sectionState.socialMedia = {
+      label: 'Social Media',
+      visible: true,
+      complete: socialComplete,
+      ...getSectionStatusMeta(
+        socialComplete,
+        platforms.length === 0
+          ? 'No social media platforms are configured.'
+          : 'At least one social profile is connected.',
+        'Add at least one social profile link.'
+      )
+    };
   }
 
   if (visibleSections.show_connected_accounts) {
     const accountTypes = ConnectedAccountType.findAll();
-    const accounts = ConnectedAccountType.getUserConnectedAccounts(currentUser.id);
-    const hasConnectedAccount = accounts.some((account) => hasContent(account.value));
+    const accounts = ConnectedAccountType.getUserConnectedAccounts(user.id);
+    const connectedComplete = accountTypes.length === 0 || accounts.some((account) => hasContent(account.value));
 
-    sections.push({
-      label: 'Connected accounts',
-      complete: accountTypes.length === 0 || hasConnectedAccount,
-      hint: 'Connect at least one external account.'
-    });
+    sectionState.connectedAccounts = {
+      label: 'Connected Accounts',
+      visible: true,
+      complete: connectedComplete,
+      ...getSectionStatusMeta(
+        connectedComplete,
+        accountTypes.length === 0
+          ? 'No connected account types are configured.'
+          : 'At least one external account is linked.',
+        'Connect at least one external account.'
+      )
+    };
   }
 
-  const completedSections = sections.filter((section) => section.complete).length;
-  const completionPercent = sections.length === 0
+  const visibleSectionList = [
+    sectionState.account,
+    sectionState.personalInfo.visible ? sectionState.personalInfo : null,
+    sectionState.socialMedia.visible ? sectionState.socialMedia : null,
+    sectionState.connectedAccounts.visible ? sectionState.connectedAccounts : null
+  ].filter(Boolean);
+  const completedSections = visibleSectionList.filter((section) => section.complete).length;
+  const completionPercent = visibleSectionList.length === 0
     ? 100
-    : Math.round((completedSections / sections.length) * 100);
-  const missingSections = sections.filter((section) => !section.complete);
+    : Math.round((completedSections / visibleSectionList.length) * 100);
+
+  return {
+    ...sectionState,
+    visibleSectionList,
+    completedSections,
+    completionPercent
+  };
+}
+
+function buildDashboardProfileCompletion(currentUser, roleName) {
+  const sectionState = buildProfileSectionState(currentUser, roleName);
+  const missingSections = sectionState.visibleSectionList.filter((section) => !section.complete);
   const missingSectionsHtml = missingSections.length > 0
     ? missingSections.map((section) => `
         <li class="completion-list-item">
           <strong>${escHtml(section.label)}</strong>
-          <span>${escHtml(section.hint)}</span>
+          <span>${escHtml(section.detail)}</span>
         </li>`).join('')
     : `
         <li class="completion-list-item completion-list-item-complete">
@@ -169,9 +245,9 @@ function buildDashboardProfileCompletion(currentUser, roleName) {
         </li>`;
 
   return {
-    profile_completion_percent: completionPercent,
-    profile_completion_angle: Math.round((completionPercent / 100) * 360),
-    profile_completion_summary: `${completedSections} of ${sections.length} sections complete`,
+    profile_completion_percent: sectionState.completionPercent,
+    profile_completion_angle: Math.round((sectionState.completionPercent / 100) * 360),
+    profile_completion_summary: `${sectionState.completedSections} of ${sectionState.visibleSectionList.length} sections complete`,
     profile_missing_sections_html: missingSectionsHtml
   };
 }
@@ -320,6 +396,7 @@ app.get('/profile', (req, res) => {
   }
 
   const sections = getRoleSectionVisibility(req.session.role);
+  const profileSectionState = buildProfileSectionState(user, req.session.role);
 
   // Dynamic personal info fields (only if visible for this role)
   let personalInfoFields = '';
@@ -374,6 +451,20 @@ app.get('/profile', (req, res) => {
     user_username: user.username,
     user_email: user.email,
     user_role: user.role,
+    profile_completion_percent: profileSectionState.completionPercent,
+    profile_completion_summary: `${profileSectionState.completedSections} of ${profileSectionState.visibleSectionList.length} visible sections complete`,
+    account_status_class: profileSectionState.account.statusClass,
+    account_status_text: profileSectionState.account.statusText,
+    account_status_detail: profileSectionState.account.detail,
+    personal_info_status_class: profileSectionState.personalInfo.statusClass,
+    personal_info_status_text: profileSectionState.personalInfo.statusText,
+    personal_info_status_detail: profileSectionState.personalInfo.detail,
+    social_media_status_class: profileSectionState.socialMedia.statusClass,
+    social_media_status_text: profileSectionState.socialMedia.statusText,
+    social_media_status_detail: profileSectionState.socialMedia.detail,
+    connected_accounts_status_class: profileSectionState.connectedAccounts.statusClass,
+    connected_accounts_status_text: profileSectionState.connectedAccounts.statusText,
+    connected_accounts_status_detail: profileSectionState.connectedAccounts.detail,
     personal_info_fields: personalInfoFields,
     social_links_fields: socialFields,
     connected_accounts_fields: connectedAccountFields,
