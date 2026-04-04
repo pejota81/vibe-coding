@@ -12,6 +12,7 @@
     <ul class="navbar-nav">
       {{#if is_admin}}
       <li><a href="/users">Users</a></li>
+      <li><a href="/roles">Roles</a></li>
       {{/if}}
       <li class="navbar-user">👤 {{username}}</li>
       <li>
@@ -56,8 +57,7 @@
         <div class="form-group">
           <label for="role">Role</label>
           <select id="role" name="role" class="form-control">
-            <option value="user" {{user_role_user}}>User</option>
-            <option value="admin" {{user_role_admin}}>Admin</option>
+            {{role_options}}
           </select>
         </div>
         {{/if}}
