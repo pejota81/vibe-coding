@@ -101,46 +101,54 @@ router.get('/:id/edit', (req, res) => {
     `<option value="${escHtml(r.name)}" ${r.name === user.role ? 'selected' : ''}>${escHtml(r.name)}</option>`
   ).join('');
 
-  // Dynamic personal info fields
-  const profileFieldTypes = ProfileFieldType.findAll();
-  const profileFieldRows = ProfileFieldType.getUserProfileFields(user.id);
-  const profileFieldMap = {};
-  for (const row of profileFieldRows) profileFieldMap[row.field_type_id] = row.value;
 
-  const personalInfoFields = profileFieldTypes.map(f => {
-    const required = f.is_mandatory ? ' required' : '';
-    const reqLabel = f.is_mandatory ? ' <span style="color:#e94560">*</span>' : '';
-    return `
+  const sections = Role.getSectionVisibility(user.role);
+
+  let personalInfoFields = '';
+  if (sections.show_personal_info) {
+    const profileFieldTypes = ProfileFieldType.findAll();
+    const profileFieldRows = ProfileFieldType.getUserProfileFields(user.id);
+    const profileFieldMap = {};
+    for (const row of profileFieldRows) profileFieldMap[row.field_type_id] = row.value;
+    personalInfoFields = profileFieldTypes.map(f => {
+      const required = f.is_mandatory ? ' required' : '';
+      const reqLabel = f.is_mandatory ? ' <span style="color:#e94560">*</span>' : '';
+      return `
     <div class="form-group">
       <label for="profile_field_${f.id}">${escHtml(f.name)}${reqLabel}</label>
       <input type="${escHtml(f.input_type)}" id="profile_field_${f.id}" name="profile_field_${f.id}" class="form-control"
              value="${escHtml(profileFieldMap[f.id] || '')}" placeholder="${escHtml(f.placeholder)}"${required}>
     </div>`;
-  }).join('');
+    }).join('');
+  }
 
-  const platforms = SocialPlatform.findAll();
-  const linkRows = SocialPlatform.getUserSocialLinks(user.id);
-  const linkMap = {};
-  for (const row of linkRows) linkMap[row.platform_id] = row.value;
-
-  const socialFields = platforms.map(p => `
+  let socialFields = '';
+  if (sections.show_social_media) {
+    const platforms = SocialPlatform.findAll();
+    const linkRows = SocialPlatform.getUserSocialLinks(user.id);
+    const linkMap = {};
+    for (const row of linkRows) linkMap[row.platform_id] = row.value;
+    socialFields = platforms.map(p => `
     <div class="form-group">
       <label for="social_link_${p.id}">${escHtml(p.name)}</label>
       <input type="text" id="social_link_${p.id}" name="social_link_${p.id}" class="form-control"
              value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
     </div>`).join('');
+  }
 
-  const accountTypes = ConnectedAccountType.findAll();
-  const accountRows = ConnectedAccountType.getUserConnectedAccounts(user.id);
-  const accountMap = {};
-  for (const row of accountRows) accountMap[row.account_type_id] = row.value;
-
-  const connectedAccountFields = accountTypes.map(t => `
+  let connectedAccountFields = '';
+  if (sections.show_connected_accounts) {
+    const accountTypes = ConnectedAccountType.findAll();
+    const accountRows = ConnectedAccountType.getUserConnectedAccounts(user.id);
+    const accountMap = {};
+    for (const row of accountRows) accountMap[row.account_type_id] = row.value;
+    connectedAccountFields = accountTypes.map(t => `
     <div class="form-group">
       <label for="connected_account_${t.id}">${escHtml(t.name)}</label>
       <input type="text" id="connected_account_${t.id}" name="connected_account_${t.id}" class="form-control"
              value="${escHtml(accountMap[t.id] || '')}" placeholder="${escHtml(t.placeholder)}">
     </div>`).join('');
+  }
 
   res.renderTemplate('users/edit.html', {
     user_id: user.id,
@@ -149,6 +157,9 @@ router.get('/:id/edit', (req, res) => {
     personal_info_fields: personalInfoFields,
     social_links_fields: socialFields,
     connected_accounts_fields: connectedAccountFields,
+    show_personal_info: sections.show_personal_info,
+    show_social_media: sections.show_social_media,
+    show_connected_accounts: sections.show_connected_accounts,
     role_options: roleOptions,
     back_url: isAdmin ? '/users' : '/dashboard',
     error: (req.flash('error') || []).join(' '),
@@ -178,6 +189,9 @@ router.post('/:id', (req, res) => {
     return res.redirect(isAdmin ? '/users' : '/dashboard');
   }
 
+  const targetRoleName = role || existing.role;
+  const sections = Role.getSectionVisibility(targetRoleName);
+
   const byUsername = User.findByUsername(username);
   if (byUsername && byUsername.id !== numericId) {
     req.flash('error', 'Username already taken');
@@ -197,20 +211,23 @@ router.post('/:id', (req, res) => {
       req.session.role = updatedUser.role;
     }
 
-    // Save dynamic personal info fields
-    const allProfileFieldTypes = ProfileFieldType.findAll();
-    const profileFields = allProfileFieldTypes.map(f => ({ field_type_id: f.id, value: req.body[`profile_field_${f.id}`] || '' }));
-    ProfileFieldType.upsertUserProfileFields(numericId, profileFields);
+    if (sections.show_personal_info) {
+      const allProfileFieldTypes = ProfileFieldType.findAll();
+      const profileFields = allProfileFieldTypes.map(f => ({ field_type_id: f.id, value: req.body[`profile_field_${f.id}`] || '' }));
+      ProfileFieldType.upsertUserProfileFields(numericId, profileFields);
+    }
 
-    // Save dynamic social links
-    const platforms = SocialPlatform.findAll();
-    const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
-    SocialPlatform.upsertUserSocialLinks(numericId, links);
+    if (sections.show_social_media) {
+      const platforms = SocialPlatform.findAll();
+      const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
+      SocialPlatform.upsertUserSocialLinks(numericId, links);
+    }
 
-    // Save dynamic connected accounts
-    const accountTypes = ConnectedAccountType.findAll();
-    const accounts = accountTypes.map(t => ({ account_type_id: t.id, value: req.body[`connected_account_${t.id}`] || '' }));
-    ConnectedAccountType.upsertUserConnectedAccounts(numericId, accounts);
+    if (sections.show_connected_accounts) {
+      const accountTypes = ConnectedAccountType.findAll();
+      const accounts = accountTypes.map(t => ({ account_type_id: t.id, value: req.body[`connected_account_${t.id}`] || '' }));
+      ConnectedAccountType.upsertUserConnectedAccounts(numericId, accounts);
+    }
 
     req.flash('success', `Profile updated successfully`);
     return res.redirect(isAdmin ? '/users' : '/dashboard');

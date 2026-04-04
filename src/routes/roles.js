@@ -59,8 +59,23 @@ router.get('/new', (req, res) => {
       </label>
     </div>`).join('');
 
+  const sectionsHtml = `
+    <div class="form-check">
+      <input type="checkbox" id="show_personal_info" name="show_personal_info" value="on" checked>
+      <label for="show_personal_info">Personal Information</label>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" id="show_social_media" name="show_social_media" value="on" checked>
+      <label for="show_social_media">Social Media</label>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" id="show_connected_accounts" name="show_connected_accounts" value="on" checked>
+      <label for="show_connected_accounts">Connected Accounts</label>
+    </div>`;
+
   res.renderTemplate('roles/new.html', {
     permissions_html: permsHtml,
+    sections_html: sectionsHtml,
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
@@ -68,7 +83,7 @@ router.get('/new', (req, res) => {
 
 // Create role
 router.post('/', (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, show_personal_info, show_social_media, show_connected_accounts } = req.body;
   const permissionIds = [].concat(req.body.permissions || []).map(Number);
 
   if (!name || !name.trim()) {
@@ -82,7 +97,13 @@ router.post('/', (req, res) => {
   }
 
   try {
-    const role = Role.create({ name: name.trim(), description: description || '' });
+    const role = Role.create({
+      name: name.trim(),
+      description: description || '',
+      show_personal_info: show_personal_info === 'on' ? 1 : 0,
+      show_social_media: show_social_media === 'on' ? 1 : 0,
+      show_connected_accounts: show_connected_accounts === 'on' ? 1 : 0
+    });
     Role.setPermissions(role.id, permissionIds);
     req.flash('success', `Role "${role.name}" created successfully`);
     res.redirect('/roles');
@@ -111,12 +132,27 @@ router.get('/:id/edit', (req, res) => {
       </label>
     </div>`).join('');
 
+  const sectionsHtml = `
+    <div class="form-check">
+      <input type="checkbox" id="show_personal_info" name="show_personal_info" value="on" ${role.show_personal_info ? 'checked' : ''}>
+      <label for="show_personal_info">Personal Information</label>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" id="show_social_media" name="show_social_media" value="on" ${role.show_social_media ? 'checked' : ''}>
+      <label for="show_social_media">Social Media</label>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" id="show_connected_accounts" name="show_connected_accounts" value="on" ${role.show_connected_accounts ? 'checked' : ''}>
+      <label for="show_connected_accounts">Connected Accounts</label>
+    </div>`;
+
   res.renderTemplate('roles/edit.html', {
     role_id: role.id,
     role_name: escHtml(role.name),
     role_description: escHtml(role.description),
     role_protected: role.protected ? 'true' : '',
     permissions_html: permsHtml,
+    sections_html: sectionsHtml,
     error: (req.flash('error') || []).join(' '),
     username: req.session.username
   });
@@ -130,7 +166,7 @@ router.post('/:id', (req, res) => {
     return res.redirect('/roles');
   }
 
-  const { name, description } = req.body;
+  const { name, description, show_personal_info, show_social_media, show_connected_accounts } = req.body;
   const permissionIds = [].concat(req.body.permissions || []).map(Number);
 
   if (!name || !name.trim()) {
@@ -147,7 +183,13 @@ router.post('/:id', (req, res) => {
   try {
     // Protected roles keep their name to preserve referential integrity with users.role
     const updatedName = role.protected ? role.name : name.trim();
-    Role.update(role.id, { name: updatedName, description: description || '' });
+    Role.update(role.id, {
+      name: updatedName,
+      description: description || '',
+      show_personal_info: show_personal_info === 'on' ? 1 : 0,
+      show_social_media: show_social_media === 'on' ? 1 : 0,
+      show_connected_accounts: show_connected_accounts === 'on' ? 1 : 0
+    });
     Role.setPermissions(role.id, permissionIds);
     req.flash('success', `Role "${updatedName}" updated successfully`);
     res.redirect('/roles');

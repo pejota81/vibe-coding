@@ -14,8 +14,14 @@
       <li><a href="/users">Users</a></li>
       <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
-      <li><a href="/profile-fields">🪹 Profile Fields</a></li>
+      {{/if}}
+      {{#if can_manage_profile_fields}}
+      <li><a href="/profile-fields">🪪 Profile Fields</a></li>
+      {{/if}}
+      {{#if can_manage_social_platforms}}
       <li><a href="/social-platforms">📱 Social Media</a></li>
+      {{/if}}
+      {{#if can_manage_connected_accounts}}
       <li><a href="/connected-accounts">🔗 Connected Accounts</a></li>
       {{/if}}
       <li class="navbar-user"><a href="/profile" style="color:#e94560;text-decoration:none">👤 {{username}}</a></li>

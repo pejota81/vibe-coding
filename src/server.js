@@ -78,11 +78,32 @@ function renderTemplate(res, templateName, data = {}) {
 // Attach renderTemplate to res
 app.use((req, res, next) => {
   res.renderTemplate = (templateName, data) => {
-    const merged = Object.assign({
+    const base = {
       csrf_token: res.locals.csrfToken || '',
       is_admin: req.session && req.session.role === 'admin' ? true : false,
       current_user_id: (req.session && req.session.userId) || ''
-    }, data);
+    };
+    // Inject permission flags and section visibility for current user
+    if (req.session && req.session.role) {
+      const _db = require('./config/database');
+      const permRows = _db.prepare(`
+        SELECT p.name FROM permissions p
+        JOIN role_permissions rp ON rp.permission_id = p.id
+        JOIN roles r ON r.id = rp.role_id
+        WHERE r.name = ?
+      `).all(req.session.role);
+      const permSet = new Set(permRows.map(p => p.name));
+      base.can_manage_profile_fields    = permSet.has('manage_profile_fields')    ? true : false;
+      base.can_manage_social_platforms  = permSet.has('manage_social_platforms')  ? true : false;
+      base.can_manage_connected_accounts = permSet.has('manage_connected_accounts') ? true : false;
+      const roleRow = _db.prepare('SELECT show_personal_info, show_social_media, show_connected_accounts FROM roles WHERE name = ?').get(req.session.role);
+      if (roleRow) {
+        base.show_personal_info      = roleRow.show_personal_info      ? true : false;
+        base.show_social_media       = roleRow.show_social_media       ? true : false;
+        base.show_connected_accounts = roleRow.show_connected_accounts ? true : false;
+      }
+    }
+    const merged = Object.assign(base, data);
     return renderTemplate(res, templateName, merged);
   };
   next();
@@ -124,6 +145,16 @@ app.use('/social-platforms', require('./routes/social_platforms'));
 app.use('/connected-accounts', require('./routes/connected_accounts'));
 app.use('/profile-fields', require('./routes/profile_fields'));
 
+function getRoleSectionVisibility(roleName) {
+  const _db = require('./config/database');
+  const role = _db.prepare('SELECT show_personal_info, show_social_media, show_connected_accounts FROM roles WHERE name = ?').get(roleName || '');
+  return {
+    show_personal_info:      role ? !!role.show_personal_info      : true,
+    show_social_media:       role ? !!role.show_social_media       : true,
+    show_connected_accounts: role ? !!role.show_connected_accounts : true
+  };
+}
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -147,48 +178,56 @@ app.get('/profile', (req, res) => {
     return res.redirect('/dashboard');
   }
 
-  // Dynamic personal info fields
-  const profileFieldTypes = ProfileFieldType.findAll();
-  const profileFieldRows = ProfileFieldType.getUserProfileFields(req.session.userId);
-  const profileFieldMap = {};
-  for (const row of profileFieldRows) profileFieldMap[row.field_type_id] = row.value;
+  const sections = getRoleSectionVisibility(req.session.role);
 
-  const personalInfoFields = profileFieldTypes.map(f => {
-    const required = f.is_mandatory ? ' required' : '';
-    const reqLabel = f.is_mandatory ? ' <span style="color:#e94560">*</span>' : '';
-    return `
+  // Dynamic personal info fields (only if visible for this role)
+  let personalInfoFields = '';
+  if (sections.show_personal_info) {
+    const profileFieldTypes = ProfileFieldType.findAll();
+    const profileFieldRows = ProfileFieldType.getUserProfileFields(req.session.userId);
+    const profileFieldMap = {};
+    for (const row of profileFieldRows) profileFieldMap[row.field_type_id] = row.value;
+    personalInfoFields = profileFieldTypes.map(f => {
+      const required = f.is_mandatory ? ' required' : '';
+      const reqLabel = f.is_mandatory ? ' <span style="color:#e94560">*</span>' : '';
+      return `
     <div class="form-group">
       <label for="profile_field_${f.id}">${escHtml(f.name)}${reqLabel}</label>
       <input type="${escHtml(f.input_type)}" id="profile_field_${f.id}" name="profile_field_${f.id}" class="form-control"
              value="${escHtml(profileFieldMap[f.id] || '')}" placeholder="${escHtml(f.placeholder)}"${required}>
     </div>`;
-  }).join('');
+    }).join('');
+  }
 
-  // Dynamic social links
-  const platforms = SocialPlatform.findAll();
-  const linkRows = SocialPlatform.getUserSocialLinks(req.session.userId);
-  const linkMap = {};
-  for (const row of linkRows) linkMap[row.platform_id] = row.value;
-
-  const socialFields = platforms.map(p => `
+  // Dynamic social links (only if visible for this role)
+  let socialFields = '';
+  if (sections.show_social_media) {
+    const platforms = SocialPlatform.findAll();
+    const linkRows = SocialPlatform.getUserSocialLinks(req.session.userId);
+    const linkMap = {};
+    for (const row of linkRows) linkMap[row.platform_id] = row.value;
+    socialFields = platforms.map(p => `
     <div class="form-group">
       <label for="social_link_${p.id}">${escHtml(p.name)}</label>
       <input type="text" id="social_link_${p.id}" name="social_link_${p.id}" class="form-control"
              value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
     </div>`).join('');
+  }
 
-  // Dynamic connected accounts
-  const accountTypes = ConnectedAccountType.findAll();
-  const accountRows = ConnectedAccountType.getUserConnectedAccounts(req.session.userId);
-  const accountMap = {};
-  for (const row of accountRows) accountMap[row.account_type_id] = row.value;
-
-  const connectedAccountFields = accountTypes.map(t => `
+  // Dynamic connected accounts (only if visible for this role)
+  let connectedAccountFields = '';
+  if (sections.show_connected_accounts) {
+    const accountTypes = ConnectedAccountType.findAll();
+    const accountRows = ConnectedAccountType.getUserConnectedAccounts(req.session.userId);
+    const accountMap = {};
+    for (const row of accountRows) accountMap[row.account_type_id] = row.value;
+    connectedAccountFields = accountTypes.map(t => `
     <div class="form-group">
       <label for="connected_account_${t.id}">${escHtml(t.name)}</label>
       <input type="text" id="connected_account_${t.id}" name="connected_account_${t.id}" class="form-control"
              value="${escHtml(accountMap[t.id] || '')}" placeholder="${escHtml(t.placeholder)}">
     </div>`).join('');
+  }
 
   res.renderTemplate('profile.html', {
     user_username: user.username,
@@ -220,12 +259,16 @@ app.post('/profile', (req, res) => {
     return res.redirect('/profile');
   }
 
-  // Validate mandatory personal info fields
+  const sections = getRoleSectionVisibility(req.session.role);
+
+  // Validate mandatory personal info fields (only if section is visible)
   const allProfileFieldTypes = ProfileFieldType.findAll();
-  for (const f of allProfileFieldTypes) {
-    if (f.is_mandatory && !req.body[`profile_field_${f.id}`]) {
-      req.flash('error', `"${f.name}" is required`);
-      return res.redirect('/profile');
+  if (sections.show_personal_info) {
+    for (const f of allProfileFieldTypes) {
+      if (f.is_mandatory && !req.body[`profile_field_${f.id}`]) {
+        req.flash('error', `"${f.name}" is required`);
+        return res.redirect('/profile');
+      }
     }
   }
 
@@ -253,19 +296,25 @@ app.post('/profile', (req, res) => {
       req.session.username = updatedUser.username;
     }
 
-    // Save dynamic personal info fields
-    const profileFields = allProfileFieldTypes.map(f => ({ field_type_id: f.id, value: req.body[`profile_field_${f.id}`] || '' }));
-    ProfileFieldType.upsertUserProfileFields(id, profileFields);
+    // Save dynamic personal info fields (only if section is visible)
+    if (sections.show_personal_info) {
+      const profileFields = allProfileFieldTypes.map(f => ({ field_type_id: f.id, value: req.body[`profile_field_${f.id}`] || '' }));
+      ProfileFieldType.upsertUserProfileFields(id, profileFields);
+    }
 
-    // Save dynamic social links
-    const platforms = SocialPlatform.findAll();
-    const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
-    SocialPlatform.upsertUserSocialLinks(id, links);
+    // Save dynamic social links (only if section is visible)
+    if (sections.show_social_media) {
+      const platforms = SocialPlatform.findAll();
+      const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
+      SocialPlatform.upsertUserSocialLinks(id, links);
+    }
 
-    // Save dynamic connected accounts
-    const accountTypes = ConnectedAccountType.findAll();
-    const accounts = accountTypes.map(t => ({ account_type_id: t.id, value: req.body[`connected_account_${t.id}`] || '' }));
-    ConnectedAccountType.upsertUserConnectedAccounts(id, accounts);
+    // Save dynamic connected accounts (only if section is visible)
+    if (sections.show_connected_accounts) {
+      const accountTypes = ConnectedAccountType.findAll();
+      const accounts = accountTypes.map(t => ({ account_type_id: t.id, value: req.body[`connected_account_${t.id}`] || '' }));
+      ConnectedAccountType.upsertUserConnectedAccounts(id, accounts);
+    }
 
     req.flash('success', 'Profile updated successfully');
     res.redirect('/profile');

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const SocialPlatform = require('../models/social_platform');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 
 router.use(requireAuth);
-router.use(requireAdmin);
+router.use(requirePermission('manage_social_platforms'));
 
 // List all platforms
 router.get('/', (req, res) => {

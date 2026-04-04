@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ConnectedAccountType = require('../models/connected_account_type');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 
 router.use(requireAuth);
-router.use(requireAdmin);
+router.use(requirePermission('manage_connected_accounts'));
 
 // List all account types
 router.get('/', (req, res) => {

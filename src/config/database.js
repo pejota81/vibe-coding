@@ -289,6 +289,9 @@ db.exec(`
     name TEXT UNIQUE NOT NULL,
     description TEXT DEFAULT '',
     protected INTEGER DEFAULT 0,
+    show_personal_info INTEGER DEFAULT 1,
+    show_social_media INTEGER DEFAULT 1,
+    show_connected_accounts INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
@@ -314,17 +317,40 @@ db.exec(`
 // Seed built-in roles (protected — cannot be deleted)
 const adminRoleExists = db.prepare("SELECT id FROM roles WHERE name = 'admin'").get();
 if (!adminRoleExists) {
-  db.prepare("INSERT INTO roles (name, description, protected) VALUES ('admin', 'Full access to all features', 1)").run();
+  db.prepare("INSERT INTO roles (name, description, protected, show_personal_info, show_social_media, show_connected_accounts) VALUES ('admin', 'Full access to all features', 1, 1, 0, 0)").run();
 }
 const userRoleExists = db.prepare("SELECT id FROM roles WHERE name = 'user'").get();
 if (!userRoleExists) {
   db.prepare("INSERT INTO roles (name, description, protected) VALUES ('user', 'Standard user with limited access', 1)").run();
 }
 
+// Migrate roles table: add section visibility columns if missing
+const existingRolesColumns = db.prepare('PRAGMA table_info(roles)').all().map(c => c.name);
+const rolesColumnsAdded = [];
+if (!existingRolesColumns.includes('show_personal_info')) {
+  db.exec('ALTER TABLE roles ADD COLUMN show_personal_info INTEGER DEFAULT 1');
+  rolesColumnsAdded.push('show_personal_info');
+}
+if (!existingRolesColumns.includes('show_social_media')) {
+  db.exec('ALTER TABLE roles ADD COLUMN show_social_media INTEGER DEFAULT 1');
+  rolesColumnsAdded.push('show_social_media');
+}
+if (!existingRolesColumns.includes('show_connected_accounts')) {
+  db.exec('ALTER TABLE roles ADD COLUMN show_connected_accounts INTEGER DEFAULT 1');
+  rolesColumnsAdded.push('show_connected_accounts');
+}
+// On first migration: enforce admin role hides social media and connected accounts
+if (rolesColumnsAdded.length > 0) {
+  db.prepare("UPDATE roles SET show_social_media = 0, show_connected_accounts = 0 WHERE name = 'admin'").run();
+}
+
 // Seed built-in permissions
 const seedPermissions = [
   { name: 'manage_users', description: 'Create, edit and delete users' },
-  { name: 'manage_roles', description: 'Create, edit and delete roles' }
+  { name: 'manage_roles',             description: 'Create, edit and delete roles' },
+  { name: 'manage_profile_fields',    description: 'Manage personal info field types' },
+  { name: 'manage_social_platforms',  description: 'Manage social media platforms' },
+  { name: 'manage_connected_accounts', description: 'Manage connected account types' }
 ];
 for (const perm of seedPermissions) {
   const exists = db.prepare('SELECT id FROM permissions WHERE name = ?').get(perm.name);
