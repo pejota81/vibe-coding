@@ -121,6 +121,7 @@ app.use('/users', require('./routes/users'));
 app.use('/roles', require('./routes/roles'));
 app.use('/settings', require('./routes/settings'));
 app.use('/social-platforms', require('./routes/social_platforms'));
+app.use('/connected-accounts', require('./routes/connected_accounts'));
 
 function escHtml(str) {
   return String(str)
@@ -137,6 +138,7 @@ app.get('/profile', (req, res) => {
   }
   const User = require('./models/user');
   const SocialPlatform = require('./models/social_platform');
+  const ConnectedAccountType = require('./models/connected_account_type');
   const user = User.findById(req.session.userId);
   if (!user) {
     req.flash('error', 'User not found');
@@ -155,6 +157,18 @@ app.get('/profile', (req, res) => {
              value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
     </div>`).join('');
 
+  const accountTypes = ConnectedAccountType.findAll();
+  const accountRows = ConnectedAccountType.getUserConnectedAccounts(req.session.userId);
+  const accountMap = {};
+  for (const row of accountRows) accountMap[row.account_type_id] = row.value;
+
+  const connectedAccountFields = accountTypes.map(t => `
+    <div class="form-group">
+      <label for="connected_account_${t.id}">${escHtml(t.name)}</label>
+      <input type="text" id="connected_account_${t.id}" name="connected_account_${t.id}" class="form-control"
+             value="${escHtml(accountMap[t.id] || '')}" placeholder="${escHtml(t.placeholder)}">
+    </div>`).join('');
+
   res.renderTemplate('profile.html', {
     user_username: user.username,
     user_email: user.email,
@@ -163,10 +177,8 @@ app.get('/profile', (req, res) => {
     user_last_name: user.last_name || '',
     user_birthday: user.birthday || '',
     user_website: user.website || '',
-    user_microsoft_account: user.microsoft_account || '',
-    user_apple_account: user.apple_account || '',
-    user_google_account: user.google_account || '',
     social_links_fields: socialFields,
+    connected_accounts_fields: connectedAccountFields,
     member_since: new Date(user.created_at).toLocaleDateString(),
     username: req.session.username,
     success: (req.flash('success') || []).join(' '),
@@ -180,9 +192,9 @@ app.post('/profile', (req, res) => {
   }
   const User = require('./models/user');
   const SocialPlatform = require('./models/social_platform');
+  const ConnectedAccountType = require('./models/connected_account_type');
   const { username, email, password,
-    first_name, last_name, birthday, website,
-    microsoft_account, apple_account, google_account
+    first_name, last_name, birthday, website
   } = req.body;
   const id = req.session.userId;
 
@@ -211,8 +223,7 @@ app.post('/profile', (req, res) => {
 
   try {
     const updatedUser = User.update(id, { username, email, password: password || null,
-      first_name, last_name, birthday: birthday || null, website,
-      microsoft_account, apple_account, google_account
+      first_name, last_name, birthday: birthday || null, website
     });
     if (updatedUser) {
       req.session.username = updatedUser.username;
@@ -222,6 +233,11 @@ app.post('/profile', (req, res) => {
     const platforms = SocialPlatform.findAll();
     const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
     SocialPlatform.upsertUserSocialLinks(id, links);
+
+    // Save dynamic connected accounts
+    const accountTypes = ConnectedAccountType.findAll();
+    const accounts = accountTypes.map(t => ({ account_type_id: t.id, value: req.body[`connected_account_${t.id}`] || '' }));
+    ConnectedAccountType.upsertUserConnectedAccounts(id, accounts);
 
     req.flash('success', 'Profile updated successfully');
     res.redirect('/profile');

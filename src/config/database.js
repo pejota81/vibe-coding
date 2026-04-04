@@ -175,6 +175,59 @@ if (existingColumns.includes('social_facebook')) {
 }
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS connected_account_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    placeholder TEXT DEFAULT '',
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_connected_accounts (
+    user_id INTEGER NOT NULL,
+    account_type_id INTEGER NOT NULL,
+    value TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (user_id, account_type_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (account_type_id) REFERENCES connected_account_types(id) ON DELETE CASCADE
+  )
+`);
+
+// Seed the 3 default connected account types and migrate any existing user data
+const defaultAccountTypes = [
+  { name: 'Microsoft Account (Outlook / Live / Hotmail)', placeholder: 'you@outlook.com', col: 'microsoft_account', order: 10 },
+  { name: 'Apple Account',                                placeholder: 'you@icloud.com',  col: 'apple_account',     order: 20 },
+  { name: 'Google Account',                               placeholder: 'you@gmail.com',   col: 'google_account',    order: 30 },
+];
+
+for (const t of defaultAccountTypes) {
+  const exists = db.prepare('SELECT id FROM connected_account_types WHERE name = ?').get(t.name);
+  if (!exists) {
+    db.prepare('INSERT INTO connected_account_types (name, placeholder, sort_order) VALUES (?, ?, ?)').run(t.name, t.placeholder, t.order);
+  }
+}
+
+// One-time migration: copy data from old *_account columns into user_connected_accounts
+if (existingColumns.includes('microsoft_account')) {
+  const upsertAccount = db.prepare(
+    'INSERT OR IGNORE INTO user_connected_accounts (user_id, account_type_id, value) VALUES (?, ?, ?)'
+  );
+  for (const t of defaultAccountTypes) {
+    if (!existingColumns.includes(t.col)) continue;
+    const accountType = db.prepare('SELECT id FROM connected_account_types WHERE name = ?').get(t.name);
+    if (!accountType) continue;
+    const usersWithValue = db.prepare(
+      `SELECT id, ${t.col} AS val FROM users WHERE ${t.col} IS NOT NULL AND ${t.col} != ''`
+    ).all();
+    for (const u of usersWithValue) {
+      if (u.val) upsertAccount.run(u.id, accountType.id, u.val);
+    }
+  }
+}
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS roles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
