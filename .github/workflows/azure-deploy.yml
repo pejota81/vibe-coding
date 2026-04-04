@@ -1,0 +1,109 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+      - deploy
+  workflow_dispatch:
+
+env:
+  AZURE_APP_NAME: vibe-coding-app
+  AZURE_RESOURCE_GROUP: vibe-coding-rg
+  NODE_VERSION: '18.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests (if any)
+        run: npm test --if-present
+      
+      - name: Build application
+        run: npm run build --if-present
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: |
+            node_modules/
+            src/
+            public/
+            data/
+            package*.json
+            web.config
+            .env.example
+          retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: .
+      
+      - name: Restart App Service
+        run: |
+          az webapp restart \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+      
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f https://${{ env.AZURE_APP_NAME }}.azurewebsites.net/api/health || exit 1
+        continue-on-error: true
+
+  post-deploy:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Check deployment status
+        run: |
+          az webapp show \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "{Name:name, State:state, HostNames:hostNames[0]}" -o table
+      
+      - name: Stream logs
+        run: |
+          az webapp log tail \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --provider "Filesystem" \
+            --lines 50
+        continue-on-error: true
