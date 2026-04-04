@@ -36,13 +36,20 @@ function create({ username, email, password, role = 'user' }) {
 }
 
 function update(id, { username, email, password, role }) {
-  const user = findByIdWithPassword(id);
+  const user = db.prepare('SELECT id, username, email, password, role, created_at, updated_at FROM users WHERE id = ?').get(id);
   if (!user) return null;
 
   const newUsername = username ?? user.username;
   const newEmail = email ?? user.email;
   const newRole = role ?? user.role;
   const newPassword = password ? bcrypt.hashSync(password, SALT_ROUNDS) : user.password;
+
+  if (newRole !== 'admin' && user.role === 'admin') {
+    const adminCount = db.prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin'").get();
+    if (adminCount.cnt <= 1) {
+      throw new Error('Cannot remove admin role from the last admin user');
+    }
+  }
 
   db.prepare(
     'UPDATE users SET username = ?, email = ?, password = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
