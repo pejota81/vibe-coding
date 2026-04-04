@@ -14,6 +14,7 @@
       <li><a href="/users">Users</a></li>
       <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
+      <li><a href="/social-platforms">📱 Social Media</a></li>
       {{/if}}
       <li class="navbar-user"><a href="/profile" style="color:#e94560;text-decoration:none">👤 {{username}}</a></li>
       <li>
@@ -105,56 +106,7 @@
 
           <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Social Media</h4>
 
-          <div class="form-group">
-            <label for="social_facebook">Facebook</label>
-            <input type="text" id="social_facebook" name="social_facebook" class="form-control"
-                   value="{{user_social_facebook}}" placeholder="https://facebook.com/yourprofile">
-          </div>
-          <div class="form-group">
-            <label for="social_instagram">Instagram</label>
-            <input type="text" id="social_instagram" name="social_instagram" class="form-control"
-                   value="{{user_social_instagram}}" placeholder="https://instagram.com/yourhandle">
-          </div>
-          <div class="form-group">
-            <label for="social_twitter">X / Twitter</label>
-            <input type="text" id="social_twitter" name="social_twitter" class="form-control"
-                   value="{{user_social_twitter}}" placeholder="https://x.com/yourhandle">
-          </div>
-          <div class="form-group">
-            <label for="social_linkedin">LinkedIn</label>
-            <input type="text" id="social_linkedin" name="social_linkedin" class="form-control"
-                   value="{{user_social_linkedin}}" placeholder="https://linkedin.com/in/yourprofile">
-          </div>
-          <div class="form-group">
-            <label for="social_youtube">YouTube</label>
-            <input type="text" id="social_youtube" name="social_youtube" class="form-control"
-                   value="{{user_social_youtube}}" placeholder="https://youtube.com/@yourchannel">
-          </div>
-          <div class="form-group">
-            <label for="social_tiktok">TikTok</label>
-            <input type="text" id="social_tiktok" name="social_tiktok" class="form-control"
-                   value="{{user_social_tiktok}}" placeholder="https://tiktok.com/@yourhandle">
-          </div>
-          <div class="form-group">
-            <label for="social_snapchat">Snapchat</label>
-            <input type="text" id="social_snapchat" name="social_snapchat" class="form-control"
-                   value="{{user_social_snapchat}}" placeholder="your-snapchat-username">
-          </div>
-          <div class="form-group">
-            <label for="social_pinterest">Pinterest</label>
-            <input type="text" id="social_pinterest" name="social_pinterest" class="form-control"
-                   value="{{user_social_pinterest}}" placeholder="https://pinterest.com/yourprofile">
-          </div>
-          <div class="form-group">
-            <label for="social_reddit">Reddit</label>
-            <input type="text" id="social_reddit" name="social_reddit" class="form-control"
-                   value="{{user_social_reddit}}" placeholder="https://reddit.com/u/yourhandle">
-          </div>
-          <div class="form-group">
-            <label for="social_discord">Discord</label>
-            <input type="text" id="social_discord" name="social_discord" class="form-control"
-                   value="{{user_social_discord}}" placeholder="yourhandle">
-          </div>
+          {{social_links_fields}}
 
           <h4 style="margin:1.25rem 0 .75rem;color:#333;border-bottom:1px solid #eee;padding-bottom:.5rem">Connected Accounts</h4>
 

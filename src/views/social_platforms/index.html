@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roles — Vibe Coding</title>
+  <title>Social Media Platforms — Vibe Coding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
     <ul class="navbar-nav">
       {{#if is_admin}}
       <li><a href="/users">Users</a></li>
+      <li><a href="/settings">⚙️ Settings</a></li>
       <li><a href="/roles">Roles</a></li>
       <li><a href="/social-platforms">📱 Social Media</a></li>
       {{/if}}
@@ -36,23 +37,22 @@
 
     <div class="card">
       <div class="card-header">
-        <h2>Roles</h2>
-        <a href="/roles/new" class="btn btn-primary btn-sm">➕ Add New Role</a>
+        <h2>Social Media Platforms</h2>
+        <a href="/social-platforms/new" class="btn btn-primary btn-sm">➕ Add Platform</a>
       </div>
 
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Order</th>
               <th>Name</th>
-              <th>Description</th>
-              <th>Permissions</th>
+              <th>URL / Handle Example</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {{roles_table}}
+            {{platforms_table}}
           </tbody>
         </table>
       </div>

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const Role = require('../models/role');
+const SocialPlatform = require('../models/social_platform');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.use(requireAuth);
@@ -98,6 +99,18 @@ router.get('/:id/edit', (req, res) => {
     `<option value="${escHtml(r.name)}" ${r.name === user.role ? 'selected' : ''}>${escHtml(r.name)}</option>`
   ).join('');
 
+  const platforms = SocialPlatform.findAll();
+  const linkRows = SocialPlatform.getUserSocialLinks(user.id);
+  const linkMap = {};
+  for (const row of linkRows) linkMap[row.platform_id] = row.value;
+
+  const socialFields = platforms.map(p => `
+    <div class="form-group">
+      <label for="social_link_${p.id}">${escHtml(p.name)}</label>
+      <input type="text" id="social_link_${p.id}" name="social_link_${p.id}" class="form-control"
+             value="${escHtml(linkMap[p.id] || '')}" placeholder="${escHtml(p.placeholder)}">
+    </div>`).join('');
+
   res.renderTemplate('users/edit.html', {
     user_id: user.id,
     user_username: escHtml(user.username),
@@ -106,19 +119,10 @@ router.get('/:id/edit', (req, res) => {
     user_last_name: escHtml(user.last_name || ''),
     user_birthday: escHtml(user.birthday || ''),
     user_website: escHtml(user.website || ''),
-    user_social_facebook: escHtml(user.social_facebook || ''),
-    user_social_instagram: escHtml(user.social_instagram || ''),
-    user_social_twitter: escHtml(user.social_twitter || ''),
-    user_social_linkedin: escHtml(user.social_linkedin || ''),
-    user_social_youtube: escHtml(user.social_youtube || ''),
-    user_social_tiktok: escHtml(user.social_tiktok || ''),
-    user_social_snapchat: escHtml(user.social_snapchat || ''),
-    user_social_pinterest: escHtml(user.social_pinterest || ''),
-    user_social_reddit: escHtml(user.social_reddit || ''),
-    user_social_discord: escHtml(user.social_discord || ''),
     user_microsoft_account: escHtml(user.microsoft_account || ''),
     user_apple_account: escHtml(user.apple_account || ''),
     user_google_account: escHtml(user.google_account || ''),
+    social_links_fields: socialFields,
     role_options: roleOptions,
     back_url: isAdmin ? '/users' : '/dashboard',
     error: (req.flash('error') || []).join(' '),
@@ -139,9 +143,6 @@ router.post('/:id', (req, res) => {
 
   const { username, email, password,
     first_name, last_name, birthday, website,
-    social_facebook, social_instagram, social_twitter, social_linkedin,
-    social_youtube, social_tiktok, social_snapchat, social_pinterest,
-    social_reddit, social_discord,
     microsoft_account, apple_account, google_account
   } = req.body;
   // Only admins can change roles
@@ -169,15 +170,18 @@ router.post('/:id', (req, res) => {
   try {
     const updatedUser = User.update(id, { username, email, password: password || null, role,
       first_name, last_name, birthday: birthday || null, website,
-      social_facebook, social_instagram, social_twitter, social_linkedin,
-      social_youtube, social_tiktok, social_snapchat, social_pinterest,
-      social_reddit, social_discord,
       microsoft_account, apple_account, google_account
     });
     if (isSelf && updatedUser) {
       req.session.username = updatedUser.username;
       req.session.role = updatedUser.role;
     }
+
+    // Save dynamic social links
+    const platforms = SocialPlatform.findAll();
+    const links = platforms.map(p => ({ platform_id: p.id, value: req.body[`social_link_${p.id}`] || '' }));
+    SocialPlatform.upsertUserSocialLinks(numericId, links);
+
     req.flash('success', `Profile updated successfully`);
     return res.redirect(isAdmin ? '/users' : '/dashboard');
   } catch (err) {
