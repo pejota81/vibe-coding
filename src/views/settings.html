@@ -14,7 +14,7 @@
       <li><a href="/users">Users</a></li>
       <li><a href="/settings">⚙️ Settings</a></li>
       {{/if}}
-      <li class="navbar-user">👤 {{username}}</li>
+      <li class="navbar-user"><a href="/profile" style="color:#e94560;text-decoration:none">👤 {{username}}</a></li>
       <li>
         <form method="POST" action="/logout" style="margin:0">
           <input type="hidden" name="_csrf" value="{{csrf_token}}">
