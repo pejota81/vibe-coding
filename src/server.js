@@ -109,6 +109,7 @@ app.get('/dashboard', (req, res) => {
 
 app.use('/', require('./routes/auth'));
 app.use('/users', require('./routes/users'));
+app.use('/roles', require('./routes/roles'));
 
 // 404 handler
 app.use((req, res) => {

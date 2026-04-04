@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Users — Vibe Coding</title>
+  <title>Roles — Vibe Coding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -35,8 +35,8 @@
 
     <div class="card">
       <div class="card-header">
-        <h2>All Users</h2>
-        <a href="/users/new" class="btn btn-primary btn-sm">➕ Add New User</a>
+        <h2>Roles</h2>
+        <a href="/roles/new" class="btn btn-primary btn-sm">➕ Add New Role</a>
       </div>
 
       <div class="table-wrapper">
@@ -44,15 +44,14 @@
           <thead>
             <tr>
               <th>ID</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Created</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Permissions</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {{users_table}}
+            {{roles_table}}
           </tbody>
         </table>
       </div>
