@@ -38,6 +38,18 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
           value: '18-lts'
         }
         {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
+        }
+        {
+          name: 'ENABLE_ORYX_BUILD'
+          value: 'true'
+        }
+        {
+          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
+          value: '1800'
+        }
+        {
           name: 'COSMOS_DB_ENDPOINT'
           value: cosmosDbAccount.properties.documentEndpoint
         }
@@ -108,17 +120,6 @@ resource cosmosDbContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/c
     options: {
       throughput: 400
     }
-  }
-}
-
-// Grant App Service access to Cosmos DB
-resource rbacAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: cosmosDbAccount
-  name: guid(cosmosDbAccount.id, appService.identity.principalId, '00000000-0000-0000-0000-000000000002')
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')
-    principalId: appService.identity.principalId
-    principalType: 'ServicePrincipal'
   }
 }
 
