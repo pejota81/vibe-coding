@@ -4,12 +4,16 @@
   "description": "User management web application",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "migrate:cosmos": "node scripts/migrate-to-cosmos.js",
+    "deploy:prepare": "npm install --production",
+    "deploy:azure": "npm run deploy:prepare && npm run migrate:cosmos"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.0.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.0.0",
     "connect-flash": "^0.1.1",

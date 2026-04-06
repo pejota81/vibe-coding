@@ -1,0 +1,22 @@
+{
+  "name": "vibe-coding-app",
+  "version": "1.0.0",
+  "description": "User management web application on Azure",
+  "engines": {
+    "node": "18.x"
+  },
+  "homepage": "https://github.com/pejota81/vibe-coding",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pejota81/vibe-coding.git"
+  },
+  "deploymentConfig": {
+    "azure": {
+      "appServicePlan": "B1",
+      "runtime": "NODE|18-lts",
+      "startupCommand": "node src/server.js",
+      "database": "Cosmos DB (SQL API)",
+      "region": "East US (recommended)"
+    }
+  }
+}
