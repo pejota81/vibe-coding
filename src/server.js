@@ -31,12 +31,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Session
 app.use(session({
   secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Changed to true to ensure session is saved on every request
+  saveUninitialized: true, // Changed to true to ensure session exists for CSRF token
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true // Prevent client-side JS from accessing session cookie
   }
 }));
 
