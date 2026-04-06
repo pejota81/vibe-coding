@@ -29,16 +29,29 @@ app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Session
+const isProduction = process.env.NODE_ENV === 'production';
+console.log('[Session] NODE_ENV:', process.env.NODE_ENV, 'isProduction:', isProduction);
+console.log('[Session] SESSION_SECRET set:', !!SESSION_SECRET);
+
 app.use(session({
   secret: SESSION_SECRET,
-  resave: true, // Changed to true to ensure session is saved on every request
-  saveUninitialized: true, // Changed to true to ensure session exists for CSRF token
+  resave: true,
+  saveUninitialized: true,
+  proxy: true,
+  name: 'vibe.sid',
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true // Prevent client-side JS from accessing session cookie
+    sameSite: false,
+    secure: isProduction,
+    httpOnly: true
   }
+}));
+
+console.log('[Session] Middleware initialized, cookie settings:', JSON.stringify({
+  maxAge: 24 * 60 * 60 * 1000,
+  sameSite: false,
+  secure: isProduction,
+  httpOnly: true
 }));
 
 // Flash
@@ -721,6 +734,17 @@ app.post('/profile', (req, res) => {
     req.flash('error', 'Error updating profile: ' + err.message);
     res.redirect('/profile');
   }
+});
+
+// Debug endpoint to check session
+app.get('/debug/session', (req, res) => {
+  res.json({
+    sessionID: req.sessionID,
+    cookies: req.headers.cookie,
+    hasSession: !!req.session,
+    sessionKeys: req.session ? Object.keys(req.session) : [],
+    csrfToken: req.session?.csrfToken
+  });
 });
 
 // 404 handler
